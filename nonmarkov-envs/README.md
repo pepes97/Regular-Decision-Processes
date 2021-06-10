@@ -77,7 +77,7 @@ Specifically, the transition function &tau; and the output function &theta; are 
 	   ...
 	}
 
-Except for very simple domains, it is hard to specify tau and theta manually. In general, we write methods to generate these mappings (see examples in [``nonmarkov_envs/specs``](./nonmarkov_envs/specs)<!--(https://github.com/whitemech/nonmarkov-envs/tree/master/nonmarkov_envs/specs)).-->
+Except for very simple domains, it is hard to specify tau and theta manually. In general, we write methods to generate these mappings (see examples in [``nonmarkov_envs/specs``](https://github.com/whitemech/nonmarkov-envs/tree/master/nonmarkov_envs/specs)).
 
 ## Contribute
 
