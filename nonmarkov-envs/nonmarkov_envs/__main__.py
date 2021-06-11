@@ -7,18 +7,18 @@ from nonmarkov_envs.specs.rotating_maze import RotatingMaze
 
 def main():   
     env_spec = RotatingMaze()
-    #print(env_spec.theta[(2, 3, 0, 0)])
-    #print(env_spec.GOAL_POSITION)
-    # pippo
-    # env = RDPEnv(env_spec, markovian=False, stop_prob=0.01)
-    # print(env.theta(state= (0, 0, 0, 0)))
+    env = RDPEnv(env_spec, markovian=False, stop_prob=0.01)
+    env.reset()
+
+    print(env.theta(state= (0, 0, 0, 0)))
+    print(env.tau(state= (0, 0, 0, 0)))
     # dict_action = env.theta(state= (0, 0, 0, 0))
     
     #print(env.theta(state=(2, 3)))
-    print(RDPEnv(env_spec, markovian=False, stop_prob=0.01).step(0))
-    print(RDPEnv(env_spec, markovian=False, stop_prob=0.01).step(1))
-    print(RDPEnv(env_spec, markovian=False, stop_prob=0.01).step(2))
-    print(RDPEnv(env_spec, markovian=False, stop_prob=0.01).step(3))
+    '''print(env.step(0))
+    print(env.step(1))
+    print(env.step(2))
+    print(env.step(3))'''
     #print(env.tau())
     #env.theta(state=(0, 0, 0, 0))
     #print(env._compute_action_space(new_theta))
