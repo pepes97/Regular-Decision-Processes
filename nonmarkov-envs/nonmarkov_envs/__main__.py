@@ -9,7 +9,7 @@ sys.setrecursionlimit(1000000)
 
 def main():   
     env_spec = RotatingMaze()
-    env = RDPEnv(env_spec, markovian=False, stop_prob=0.0, episode_length=10)
+    env = RDPEnv(env_spec, markovian=False, stop_prob=0.0, episode_length=15)
     env.reset()
 
     '''print(env.theta(state= (0, 0, 0, 0)))
