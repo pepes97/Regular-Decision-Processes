@@ -9,15 +9,15 @@ sys.setrecursionlimit(1000000)
 
 def main():   
     env_spec = RotatingMaze()
-    env = RDPEnv(env_spec, markovian=False, stop_prob=0.0, episode_length=100)
+    env = RDPEnv(env_spec, markovian=False, stop_prob=0.0, episode_length=10)
     env.reset()
 
     '''print(env.theta(state= (0, 0, 0, 0)))
     print(env.tau(state= (0, 0, 0, 0)))
     # dict_action = env.theta(state= (0, 0, 0, 0))'''
     
-    mcts = MonteCarloTreeSearch(env)
-    mcts_initial_state = mcts.mcts(1000)
+    mcts = MonteCarloTreeSearch(env, 10000)
+    mcts_initial_state = mcts.mcts(mcts.iterations)
 
     mcts.print_best_path(mcts_initial_state, False)
     return

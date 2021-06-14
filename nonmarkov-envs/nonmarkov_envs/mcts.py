@@ -5,10 +5,12 @@ import random
 from collections import defaultdict
 
 class MonteCarloTreeSearch():
-    def __init__(self, env):
+    def __init__(self, env, iterations):
         self.env = env
-        self.initial_mcts_state = MonteCarloTreeSearchNode(state = env.specification.initial_state)
-
+        self.iterations = iterations
+        self.initial_mcts_state = MonteCarloTreeSearchNode(state = self.env.specification.initial_state)
+        self.reward_goal = 100 #self.env.specification.reward_goal
+        self.total = 0
 
 
     def mcts(self, iterations):
@@ -18,28 +20,43 @@ class MonteCarloTreeSearch():
 
             print("initial state: ", self.initial_mcts_state.state)
 
-            mcts_state, done, reward = self.select(self.initial_mcts_state, False, 0)
-            #print("selected state: ", mcts_state.state)
+            mcts_state, done, reward, steps = self.select(self.initial_mcts_state, False, 0, 0)
+            print("selected state: ", mcts_state.state)
 
-            mcts_state_next_state, done, reward = self.expand(mcts_state)
-            #print("done: ", done, reward)
-            #print("expanded state: ", mcts_state_next_state.state)
+            if done:
+                if reward == self.reward_goal:
+                    normalized_reward = reward/steps
+                    self.total+=normalized_reward
 
-            simulation_result = 1 if self.simulate(mcts_state_next_state, done, reward)==100 else 0
-            print(simulation_result)
+            else:
+                mcts_next_state, done, reward, steps = self.expand(mcts_state, steps)
+                #print("done: ", done, reward)
+                print("expanded state: ", mcts_next_state.state)
 
-            #print("**************************************************\n\n\n")
-            self.backpropagate(mcts_state_next_state, simulation_result)
+                if done:
+                    if reward == self.reward_goal:
+                        normalized_reward = reward/steps
+                        self.total+=normalized_reward
+
+                else:
+                    simulation_result = 1 if self.simulate(mcts_next_state, done, reward)==self.reward_goal else -1
+                    if simulation_result == 1:
+                        normalized_reward = self.reward_goal/steps
+                        self.total+=normalized_reward
+                    print(simulation_result)
+
+                    self.backpropagate(mcts_next_state, simulation_result)
 
             return self.mcts(iterations-1)
-            
+
         
         else:
+            print("AVERAGE REWARD:", self.total/self.iterations)
             return self.initial_mcts_state
 
 
 
-    def select(self, mcts_state, done, reward): #la select va sempre chiamata sulla radice
+    def select(self, mcts_state, done, reward, steps): #la select va sempre chiamata sulla radice
         while not done and len(mcts_state.children) > 0 and reward!=100:
             #theta = self.env.theta(mcts_state.state)
             #tau = self.env.tau(mcts_state.state)
@@ -52,26 +69,25 @@ class MonteCarloTreeSearch():
                     if node not in mcts_state.children:
                         mcts_state.children.append(node)'''
             
-            best_child = self.best_child(mcts_state)
+            best_child = self.best_child(mcts_state) 
             best_child._number_of_visits+=1
             best_action = best_child.parent_action
             print(f"selected state: {best_child.state}, {best_action}")
             state, reward, done, _ = self.env.step(best_action)
-            print(f"selected state: {best_child.state}, real state: {state}")
+            #print(f"selected state: {best_child.state}, real state: {state}")
             mcts_state = best_child
-            return self.select(mcts_state, done, reward) 
+            return self.select(mcts_state, done, reward, steps+1) 
         
         print("selected state:", mcts_state.state)
-        return mcts_state, done, reward
+        return mcts_state, done, reward, steps
 
 
 
-    def expand(self, mcts_state):
+    def expand(self, mcts_state, steps):
         theta = self.env.theta(mcts_state.state)
         tau = self.env.tau(mcts_state.state)
 
         for action in list(theta.keys()):
-            #print(theta[action])
             observation = self.select_observation(theta[action])
             node = MonteCarloTreeSearchNode(state = tau[observation],
                                             parent = mcts_state, 
@@ -85,7 +101,7 @@ class MonteCarloTreeSearch():
         state, reward, done, _ = self.env.step(best_action)
         print(f"expanded state: {best_child.state}, real state: {state}")
 
-        return best_child, done, reward
+        return best_child, done, reward, steps+1
 
 
 
@@ -139,8 +155,7 @@ class MonteCarloTreeSearch():
 
 
     def backpropagate(self, state, result):
-        state._number_of_visits += 1.
-        state._results[result] += 1.
+        state._results[result] += 1
         if state.parent:
             self.backpropagate(state.parent, result)
 
