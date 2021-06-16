@@ -23,6 +23,7 @@ class S3M():
 
         if mode == 0:
             def pureExploration(state, n_a_s, f_a_s, p_a_s):            
+                
                 theta = self.env.theta(state)
                 
                 if n_a_s.get(state) == None:
@@ -48,7 +49,8 @@ class S3M():
                 current_trace.append(selected_action)
                 current_trace.append(reward)
                 current_trace.append(new_state)
-                self.traces.append(current_trace)
+                self.traces.append(current_trace.copy())
+                
 
                 return new_state, reward, done, n_a_s, f_a_s, p_a_s
             
@@ -58,4 +60,35 @@ class S3M():
             while not done and reward==0:
                 state, reward, done, n_a_s, f_a_s, p_a_s = pureExploration(state, n_a_s, f_a_s, p_a_s)
                 
+
+    def base_distribution(self, min_samples):
+        '''
+            Compute P(o|h,a)
+        '''
+
+        return 
+
+    def merger(self,Tr,epsilon):
+        '''
+            Merge distributions associated to two similar traces
+        '''
+        return
+
+    def merge_histories(self):
+        '''
+            Merge current histories by using different epsilon
+        '''
+        return
+
+    def calc_loss(self, TrP):
+        '''
+            Compute the loss by exploiting function (3)
+        '''
+        return
+    
+    def mealy_generator(self):
+        '''
+            Generate the Mealy machine
+        '''
+        return
         
