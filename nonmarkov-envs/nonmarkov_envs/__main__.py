@@ -1,6 +1,7 @@
 """Main script: raises an error."""
 from nonmarkov_envs.mcts import MonteCarloTreeSearch
 from nonmarkov_envs.rdp_env import RDPEnv
+from nonmarkov_envs.S3M import S3M
 from nonmarkov_envs.specs.rotating_maze import RotatingMaze
 #from nonmarkov_envs.mcts import MonteCarloTreeSearchNode
 import sys
@@ -16,10 +17,16 @@ def main():
     print(env.tau(state= (0, 0, 0, 0)))
     # dict_action = env.theta(state= (0, 0, 0, 0))'''
     
-    mcts = MonteCarloTreeSearch(env, 10000)
-    mcts_initial_state = mcts.mcts(mcts.iterations)
+    # mcts = MonteCarloTreeSearch(env, 10000)
+    # mcts_initial_state = mcts.mcts(mcts.iterations)
 
-    mcts.print_best_path(mcts_initial_state, False)
+    # mcts.print_best_path(mcts_initial_state, False)
+
+    s3m = S3M(env)
+    s3m.sample()
+    print(s3m.traces)
+    print(len(s3m.traces))
+
     return
     
 if __name__ == "__main__":
