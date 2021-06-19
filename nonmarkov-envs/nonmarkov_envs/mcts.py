@@ -39,7 +39,8 @@ class MonteCarloTreeSearch():
                         self.total+=normalized_reward
 
                 else:
-                    simulation_result = 1 if self.simulate(mcts_next_state, done, reward)==self.reward_goal else -1
+                    reward, steps = self.simulate(mcts_next_state, done, reward, steps)
+                    simulation_result = 1 if reward==self.reward_goal else -1
                     if simulation_result == 1:
                         normalized_reward = self.reward_goal/steps
                         self.total+=normalized_reward
@@ -57,9 +58,9 @@ class MonteCarloTreeSearch():
 
 
     def select(self, mcts_state, done, reward, steps): #la select va sempre chiamata sulla radice
-        while not done and len(mcts_state.children) > 0 and reward!=100:
-            #theta = self.env.theta(mcts_state.state)
-            #tau = self.env.tau(mcts_state.state)
+        while not done and len(mcts_state.children) > 0 and reward!=self.reward_goal:
+            theta = self.env.theta(mcts_state.state)
+            tau = self.env.tau(mcts_state.state)
 
             '''for action in list(theta.keys()):
                 for observation in theta[action]:
@@ -72,9 +73,10 @@ class MonteCarloTreeSearch():
             best_child = self.best_child(mcts_state) 
             best_child._number_of_visits+=1
             best_action = best_child.parent_action
-            print(f"selected state: {best_child.state}, {best_action}")
+            #print(f"selected state: {best_child.state}, {best_action}")
             state, reward, done, _ = self.env.step(best_action)
-            #print(f"selected state: {best_child.state}, real state: {state}")
+            best_child.state = tau[state]
+            print(f"selected state: {best_child.state}, real state: {state}")
             mcts_state = best_child
             return self.select(mcts_state, done, reward, steps+1) 
         
@@ -86,8 +88,10 @@ class MonteCarloTreeSearch():
     def expand(self, mcts_state, steps):
         theta = self.env.theta(mcts_state.state)
         tau = self.env.tau(mcts_state.state)
+        print("tau ", tau)
 
         for action in list(theta.keys()):
+            print(action, theta[action])
             observation = self.select_observation(theta[action])
             node = MonteCarloTreeSearchNode(state = tau[observation],
                                             parent = mcts_state, 
@@ -99,6 +103,8 @@ class MonteCarloTreeSearch():
         best_child._number_of_visits+=1
         best_action = best_child.parent_action
         state, reward, done, _ = self.env.step(best_action)
+        print(best_action, state)
+        best_child.state = tau[state]
         print(f"expanded state: {best_child.state}, real state: {state}")
 
         return best_child, done, reward, steps+1
@@ -111,7 +117,7 @@ class MonteCarloTreeSearch():
 
 
 
-    def simulate(self, current_simulation_state, done, reward):
+    def simulate(self, current_simulation_state, done, reward, steps):
         while not done and reward==0:
             theta = self.env.theta(current_simulation_state.state)
             tau = self.env.tau(current_simulation_state.state)
@@ -126,15 +132,16 @@ class MonteCarloTreeSearch():
 
             #print(f"simulated state: {current_simulation_state.state}, real state: {state}")
 
-            current_simulation_state = MonteCarloTreeSearchNode(state = tau[observation],
+            current_simulation_state = MonteCarloTreeSearchNode(state = tau[state],
                                                                 parent=current_simulation_state,
                                                                 parent_action=action)
 
             #print(state, reward, info)
+            steps += 1
 
         print("simulated state: ", current_simulation_state.state)
         #print(reward)
-        return reward
+        return reward, steps
 
 
 
@@ -169,10 +176,14 @@ class MonteCarloTreeSearch():
             '''for child in state_mcts.children:
                 print(child.state, child.n(), child.q())'''
             if len(state_mcts.children) > 0:
+                theta = self.env.theta(state_mcts.state)
+                tau = self.env.tau(state_mcts.state)
+
                 best_child = self.best_child(state_mcts)
                 best_child._number_of_visits+=1
                 best_action = best_child.parent_action
                 state, reward, done, _ = self.env.step(best_action)
+                best_child.state = tau[state]
                 print(f"State: {state_mcts.state}, Action: {best_action}, Reward: {reward}")
 
                 state_mcts = best_child

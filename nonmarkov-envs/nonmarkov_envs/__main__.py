@@ -17,15 +17,15 @@ def main():
     print(env.tau(state= (0, 0, 0, 0)))
     # dict_action = env.theta(state= (0, 0, 0, 0))'''
     
-    # mcts = MonteCarloTreeSearch(env, 10000)
-    # mcts_initial_state = mcts.mcts(mcts.iterations)
+    mcts = MonteCarloTreeSearch(env, 10000)
+    mcts_initial_state = mcts.mcts(mcts.iterations)
 
-    # mcts.print_best_path(mcts_initial_state, False)
+    #mcts.print_best_path(mcts_initial_state, False)
 
-    s3m = S3M(env)
+    '''s3m = S3M(env)
     s3m.sample()
     print(s3m.traces)
-    print(len(s3m.traces))
+    print(len(s3m.traces))'''
 
     return
     
