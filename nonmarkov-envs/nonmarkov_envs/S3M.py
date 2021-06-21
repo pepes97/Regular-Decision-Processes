@@ -1,6 +1,7 @@
 import random
 import numpy as np
-
+import ast
+from math import log2
 from numpy.random import normal
 
 class S3M():
@@ -10,6 +11,8 @@ class S3M():
         self.traces = {} # {h: [{a: [s...]}, count]} 
         self.tr = {} # {h: {a: {s: P(s|h,a)}}}
         self.h_a_s = []
+        self.h_a_sP = []
+        self.max_dkl = 0
         
     def sample(self, mode=0):
         ''' Sample a new trace by exploring the environment
@@ -85,39 +88,98 @@ class S3M():
             # Mettere P(o|h,a) in Tr
         for h in self.traces:
             if self.traces[h][1] >= min_samples:
-                for a in self.traces[h][0]: # Traces {h: [{a: [s...]}, count]} 
+                for a in self.env.specification.ACTIONS:
                     count_tot = self.traces[h][1]
-                    for s in self.traces[h][0][a]:
-                        count_obs = self.traces[h][0][a].count(s)
+                    last_s = ast.literal_eval(h)[-1]
+                    theta = self.env.theta(last_s)
+                    tau = self.env.tau(last_s)
+                    for s in theta[a]:
+                        full_s = tau[s]
+                        if a in self.traces[h][0] and full_s in self.traces[h][0][a]:
+                            count_obs = self.traces[h][0][a].count(full_s)
+                            v = count_obs/count_tot + 0.5
+                        else:
+                            v = 0.5
+
                         if not h in self.tr:
-                            self.tr[h] = {a:{s: count_obs/count_tot}}
+                            self.tr[h] = {a:{full_s: v}}
                         else:
                             if not a in self.tr[h]:
-                                self.tr[h][a] = {s: count_obs/count_tot}
+                                self.tr[h][a] = {full_s: v}
                             else:
-                                self.tr[h][a][s] = count_obs/count_tot
-                        if not (h,a,s) in self.h_a_s:
-                            self.h_a_s.append((h,a,s))
+                                self.tr[h][a][full_s] = v
+                        
+                        if not (h,a,full_s) in self.h_a_s:
+                            self.h_a_s.append((h,a,full_s))
+                        
+                # for a in self.traces[h][0]: # Traces {h: [{a: [s...]}, count]} 
+                #     count_tot = self.traces[h][1]
+                #     for s in self.traces[h][0][a]:
+                #         count_obs = self.traces[h][0][a].count(s)
+                #         if not h in self.tr:
+                #             self.tr[h] = {a:{s: count_obs/count_tot}}
+                #         else:
+                #             if not a in self.tr[h]:
+                #                 self.tr[h][a] = {s: count_obs/count_tot}
+                #             else:
+                #                 self.tr[h][a][s] = count_obs/count_tot
+                #         if not (h,a,s) in self.h_a_s:
+                #             self.h_a_s.append((h,a,s))
 
 
         return 
 
-    def merger(self,Tr,epsilon):
+	
+    # calculate the kl divergence
+    def kl_divergence(self, p, q):
+        return round(sum(p[i] * np.log(p[i]/q[i]) if p[i] != 0 and q[i] != 0 else 0 for i in range(len(p))), 4)
+
+    def merger(self,epsilon,merge,h_a_s):
         '''
             Merge distributions associated to two similar traces
         '''
         # Prendere ogni coppia di h+a+s in Tr
         # Calcoliamo la Dkl e vediamo se è minore di epsilon
-        # In caso affermativo mettiamo una delle due nel dizionario Tr'
+        # In caso affermativo mettiamo una delle due nel dizionario Tr' (quale? Forse è uguale. Rima baciata)
         # Iteriamo su Tr' fintanto che non ci siano più cluster accorpabili
+        # Tr' {h: {a: {s: P(s|h,a)}}}
+        h_a_sP = h_a_s.copy()
+        if merge == 0: 
+            return 
+        else: 
+            for (h1,a1,s1) in self.h_a_s:
+                lh1 = ast.literal_eval(h1)
+                state_seq1 = [lh1[i] for i in range(0, len(lh1), 2)]
+                min_d_kl = float('inf')
+                min_tuple = ()
+                for (h2,a2,s2) in self.h_a_s:
+                    if (h1,a1,s1) != (h2,a2,s2):
+                        lh2 = ast.literal_eval(h2)
+                        state_seq2 = [lh2[i] for i in range(0, len(lh2), 2)]
+                        if state_seq1 == state_seq2: # {h: {a: {s: P(s|h,a)}}}
+                            print(self.tr[h1][a1].values())
+                            prob_seq1 = [self.tr[h1][a1][s]/sum(self.tr[h1][a1].values()) for s in self.tr[h1][a1]]
+                            prob_seq2 = [self.tr[h2][a2][s]/sum(self.tr[h2][a2].values()) for s in self.tr[h2][a2]]
+                            print(lh1)
+                            print(lh2)
+                            print(prob_seq1)
+                            print(prob_seq2)
+                            if self.traces[h1][1] >= self.traces[h2][1]: # w1 >= w2 >= min_samples
+                                d_kl = self.kl_divergence(prob_seq1, prob_seq2)
+                            else:
+                                d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+                            print(f"Siamo belli e questa è la Dkl: {d_kl}\n\n")
+                            if d_kl < epsilon:
+                                if d_kl < min_d_kl:
+                                    min_tuple = (h2,a2,s2)
+                h_a_sP.remove(min_tuple)
+                
+                del self.tr[h2]
+                
 
-        trP = {} # Tr' {h: {a: {s: P(s|h,a)}}}
+            return             
+                        
 
-        for (h1,a1,s1) in self.h_a_s:
-            for (h2,a2,s2) in self.h_a_s:
-                if h1 != h2 or a1 != a2 or s1 != s2:
-                    if self.traces[h1][1] >= self.traces[h2][1]: # w1 >= w2 >= min_samples
-                        d_kl = – sum([x in X P(x) * log(Q(x) / P(x))])
 
         return
 
