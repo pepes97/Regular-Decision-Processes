@@ -22,10 +22,14 @@ def main():
 
     #mcts.print_best_path(mcts_initial_state, False)
 
-    '''s3m = S3M(env)
-    s3m.sample()
-    print(s3m.traces)
-    print(len(s3m.traces))'''
+    s3m = S3M(env)
+    for i in range(20):
+        s3m.sample()
+        s3m.base_distribution(5)
+    
+    print(s3m.tr)
+    # for k in s3m.traces:
+    #     print(f"{k}:\n {s3m.traces[k]}\n\n")
 
     return
     
