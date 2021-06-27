@@ -26,6 +26,7 @@ def main():
     all_rewards = []
     
     for i in range(num_trials):
+        print(">> TRIAL ", i)
         mcts = MonteCarloTreeSearch(env, total_iterations, False)
         mcts_initial_state, rewards = mcts.mcts(mcts.iterations)
         all_rewards.append(rewards)
