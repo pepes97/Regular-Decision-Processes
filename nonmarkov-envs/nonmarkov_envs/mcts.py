@@ -14,20 +14,19 @@ class MonteCarloTreeSearch():
         self.all_actions = list(self.env.specification.ACTIONS)
         self.reward_goal = 100 #self.env.specification.reward_goal
         self.total = 0
+        self.rewards = [0]
         #self.epsilon = 1
 
 
     def mcts(self, iterations):
         while iterations>0:
             self.env.reset()
-            if (self.iterations - iterations) < 10000 and iterations!=self.iterations:
-                if (self.iterations - iterations) % 1000 == 0:
-                    print(f"iteration: {self.iterations - iterations}, reward: {self.total/(self.iterations - iterations)}")
-
-            elif (self.iterations - iterations) % 10000 == 0 and iterations!=self.iterations:
+            
+            if (self.iterations - iterations) % 10000 == 0 and self.iterations!=iterations:
                 print(f"iteration: {self.iterations - iterations}, reward: {self.total/(self.iterations - iterations)}")
+                self.rewards.append(self.total/(self.iterations - iterations))
+                
 
-            #self.epsilon = self.epsilon - (self.iterations-iterations)*0.0001
             if self.debug:
                 print("iteration ", iterations)
 
@@ -72,9 +71,11 @@ class MonteCarloTreeSearch():
             iterations -= 1
             #return self.mcts(iterations-1)
 
+        print(f"iteration: {self.iterations}, reward: {self.total/(self.iterations)}")
+        self.rewards.append(self.total/(self.iterations))
         
         print("AVERAGE REWARD:", self.total/self.iterations)
-        return self.initial_mcts_state
+        return self.initial_mcts_state, self.rewards
 
 
 
