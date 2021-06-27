@@ -17,7 +17,7 @@ class RotatingMaze():
         n: int = 4,
         m: int = 4,
         rotate_count: int = 3,
-        prob_success_move: float = 0.9,
+        prob_success_move: float = 1.0,
         reward_goal: int = 100,
         initial_state: tuple = (0, 0, 0, 0)
     ):

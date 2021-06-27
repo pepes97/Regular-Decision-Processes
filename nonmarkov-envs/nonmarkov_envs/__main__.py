@@ -17,18 +17,18 @@ def main():
     print(env.tau(state= (0, 0, 0, 0)))
     # dict_action = env.theta(state= (0, 0, 0, 0))'''
     
-    #mcts = MonteCarloTreeSearch(env, 10000)
-    #mcts_initial_state = mcts.mcts(mcts.iterations)
+    mcts = MonteCarloTreeSearch(env, 1000)
+    mcts_initial_state = mcts.mcts(mcts.iterations)
 
     #mcts.print_best_path(mcts_initial_state, False)
 
-    s3m = S3M(env)
+    '''s3m = S3M(env)
     
     for i in range(200):
         s3m.sample()
         s3m.base_distribution(5)
         s3m.merger(1)
-    print(s3m.max_dkl)
+    print(s3m.max_dkl)'''
     #print(s3m.tr)
     #print(s3m.traces)
     # for k in s3m.traces:
