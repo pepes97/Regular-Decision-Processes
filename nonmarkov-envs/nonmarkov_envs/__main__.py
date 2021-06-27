@@ -6,7 +6,7 @@ from nonmarkov_envs.specs.rotating_maze import RotatingMaze
 #from nonmarkov_envs.mcts import MonteCarloTreeSearchNode
 import sys
 
-sys.setrecursionlimit(1000000)
+sys.setrecursionlimit(100000)
 
 def main():   
     env_spec = RotatingMaze()
@@ -17,7 +17,7 @@ def main():
     print(env.tau(state= (0, 0, 0, 0)))
     # dict_action = env.theta(state= (0, 0, 0, 0))'''
     
-    mcts = MonteCarloTreeSearch(env, 1000)
+    mcts = MonteCarloTreeSearch(env, 100000, False)
     mcts_initial_state = mcts.mcts(mcts.iterations)
 
     #mcts.print_best_path(mcts_initial_state, False)

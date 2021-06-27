@@ -5,25 +5,34 @@ import random
 from collections import defaultdict
 
 class MonteCarloTreeSearch():
-    def __init__(self, env, iterations):
+    def __init__(self, env, iterations, debug):
         self.env = env
         self.iterations = iterations
+        self.debug = debug
         self.initial_mcts_state = MonteCarloTreeSearchNode(state = self.env.specification.initial_state[:2])
         self.initial_mcts_state._untried_actions = list(self.env.specification.ACTIONS)
         self.all_actions = list(self.env.specification.ACTIONS)
-        print(self.all_actions)
         self.reward_goal = 100 #self.env.specification.reward_goal
         self.total = 0
         #self.epsilon = 1
 
 
     def mcts(self, iterations):
-        self.env.reset()
-        if iterations>0:
-            #self.epsilon = self.epsilon - (self.iterations-iterations)*0.0001
-            print("iteration ", iterations)
+        while iterations>0:
+            self.env.reset()
+            if (self.iterations - iterations) < 10000 and iterations!=self.iterations:
+                if (self.iterations - iterations) % 1000 == 0:
+                    print(f"iteration: {self.iterations - iterations}, reward: {self.total/(self.iterations - iterations)}")
 
-            print("initial state: ", self.initial_mcts_state.state)
+            elif (self.iterations - iterations) % 10000 == 0 and iterations!=self.iterations:
+                print(f"iteration: {self.iterations - iterations}, reward: {self.total/(self.iterations - iterations)}")
+
+            #self.epsilon = self.epsilon - (self.iterations-iterations)*0.0001
+            if self.debug:
+                print("iteration ", iterations)
+
+            if self.debug:
+                print("initial state: ", self.initial_mcts_state.state)
 
             mcts_state, done, reward, steps = self.select(self.initial_mcts_state, False, 0, 0, True)
 
@@ -35,7 +44,9 @@ class MonteCarloTreeSearch():
             else:
                 mcts_next_state, done, reward, steps = self.expand(mcts_state, steps)
                 #print("done: ", done, reward)
-                print("expanded state: ", mcts_next_state.state)
+                
+                if self.debug:
+                    print("expanded state: ", mcts_next_state.state)
 
                 if done:
                     if reward == self.reward_goal:
@@ -49,17 +60,21 @@ class MonteCarloTreeSearch():
                     if simulation_result == 1:
                         normalized_reward = self.reward_goal/steps
                         self.total+=normalized_reward
-                    print(simulation_result, normalized_reward)
+                    
+                    if self.debug:
+                        print(simulation_result, normalized_reward)
 
                     self.backpropagate(mcts_next_state, simulation_result)
+            
+            if self.debug:
+                print(reward)
 
-            print(reward)
-            return self.mcts(iterations-1)
+            iterations -= 1
+            #return self.mcts(iterations-1)
 
         
-        else:
-            print("AVERAGE REWARD:", self.total/self.iterations)
-            return self.initial_mcts_state
+        print("AVERAGE REWARD:", self.total/self.iterations)
+        return self.initial_mcts_state
 
 
 
@@ -82,10 +97,30 @@ class MonteCarloTreeSearch():
                 best_child = self.best_child(mcts_state) 
                 best_child._number_of_visits+=1
                 best_action = best_child.parent_action
-                print(f"selected state: {best_child.state}, {best_action}")
+
+                if self.debug:
+                    print(f"selected state: {best_child.state}, {best_action}")
+
                 state, reward, done, _ = self.env.step(best_action)
                 #print(f"action:{best_action}, state: {state}")
-                mcts_state = best_child
+                #mcts_state = best_child #PROBLEMA
+                node = MonteCarloTreeSearchNode(state = state,
+                                        parent = mcts_state, 
+                                        parent_action=best_action,
+                                        _untried_actions=self.all_actions.copy())
+
+                found = False
+                for s in mcts_state.children:
+                    if s == node:
+                        node = s
+                        found = True
+                        break
+
+                if found == False:
+                    mcts_state.children.append(node)
+                    
+                mcts_state = node
+
                 return self.select(mcts_state, done, reward, steps+1, select_flag) 
         
         #print("selected state:", mcts_state.state)
@@ -126,6 +161,10 @@ class MonteCarloTreeSearch():
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt((2 * np.log(c.parent.n()) / c.n())) if c.n()!=0 else 0 for c in state.children]
         return state.children[np.argmax(choices_weights)]
 
+        #Invece di calcolare il valore del singolo nodo, potremmo calcolare il valore dell'azione, così da selezionare quella migliore.
+        #Questo perchè, scegliendo l'azione sulla base del best child, nel setting non deterministico, andiamo completamente ad ignorare 
+        #il fatto che quella stessa azione potrebbe portare ad un pessimo figlio.
+
 
 
     def simulate(self, current_simulation_state, done, reward, steps):
@@ -133,7 +172,9 @@ class MonteCarloTreeSearch():
 
 
             action = self.simulation_policy(self.all_actions)
-            print("simulated state: ", current_simulation_state.state, action)
+
+            if self.debug:
+                print("simulated state: ", current_simulation_state.state, action)
                                                              
             state, reward, done, info = self.env.step(action)
 
@@ -144,7 +185,8 @@ class MonteCarloTreeSearch():
             #print(state, reward, info)
             steps += 1
 
-        print("simulated state: ", current_simulation_state.state)
+        if self.debug:
+            print("simulated state: ", current_simulation_state.state)
         #print(reward)
         return reward, steps
 
@@ -152,7 +194,6 @@ class MonteCarloTreeSearch():
 
 
     def simulation_policy(self, possible_moves):
-        print("possible moves: ", possible_moves)
         return random.choice(possible_moves)
 
 
