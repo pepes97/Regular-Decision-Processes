@@ -3,9 +3,10 @@ from .mcts_node import MonteCarloTreeSearchNode
 import numpy as np
 import random
 from collections import defaultdict
+import warnings
 
 class MonteCarloTreeSearch():
-    def __init__(self, env, iterations, debug):
+    def __init__(self, env, iterations, debug, step_iterations):
         self.env = env
         self.iterations = iterations
         self.debug = debug
@@ -14,6 +15,7 @@ class MonteCarloTreeSearch():
         self.all_actions = list(self.env.specification.ACTIONS)
         self.reward_goal = 100 #self.env.specification.reward_goal
         self.total = 0
+        self.step_iterations = step_iterations # 10000
         self.rewards = [0]
         #self.epsilon = 1
 
@@ -22,7 +24,7 @@ class MonteCarloTreeSearch():
         while iterations>0:
             self.env.reset()
             
-            if (self.iterations - iterations) % 10000 == 0 and self.iterations!=iterations:
+            if (self.iterations - iterations) % self.step_iterations == 0 and self.iterations!=iterations:
                 print(f"iteration: {self.iterations - iterations}, reward: {self.total/(self.iterations - iterations)}")
                 self.rewards.append(self.total/(self.iterations - iterations))
                 
@@ -159,6 +161,7 @@ class MonteCarloTreeSearch():
 
 
     def best_child(self, state, c_param=0.1):
+        warnings.simplefilter('ignore', RuntimeWarning) 
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt((2 * np.log(c.parent.n()) / c.n())) if c.n()!=0 else 0 for c in state.children]
         return state.children[np.argmax(choices_weights)]
 

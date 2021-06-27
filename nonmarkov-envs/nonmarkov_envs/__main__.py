@@ -5,39 +5,47 @@ from nonmarkov_envs.S3M import S3M
 from nonmarkov_envs.specs.rotating_maze import RotatingMaze
 import numpy as np
 from matplotlib import pyplot as plt 
-#from nonmarkov_envs.mcts import MonteCarloTreeSearchNode
 import sys
 
-sys.setrecursionlimit(100000)
+# sys.setrecursionlimit(100000)
 
+def plot_rewards(x, y, save_fig = False, path = ""):
+    plt.plot(x, y)
+    plt.xlabel("Steps")
+    plt.ylabel("Average Rewards")
+
+    if save_fig:
+        plt.savefig(path)
+    plt.show()
+
+def compute_average_rewards(env, total_iterations, num_trials, step):
+    all_rewards = []
+    
+    for i in range(num_trials):
+        print(">> TRIAL ", i)
+        mcts = MonteCarloTreeSearch(env, total_iterations, False, step)
+        mcts_initial_state, rewards = mcts.mcts(mcts.iterations)
+        all_rewards.append(rewards)
+    
+    all_rewards_averaged = np.average(all_rewards, axis=0)
+    return all_rewards_averaged
 
 def main():   
     env_spec = RotatingMaze()
     env = RDPEnv(env_spec, markovian=False, stop_prob=0.0, episode_length=15)
     env.reset()
-
-    '''print(env.theta(state= (0, 0, 0, 0)))
-    print(env.tau(state= (0, 0, 0, 0)))
-    # dict_action = env.theta(state= (0, 0, 0, 0))'''
     
     total_iterations = 140000
-    num_trials = 2
+    step = 20000
+    num_trials = 50
 
-    all_rewards = []
+    all_rewards_averaged = compute_average_rewards(env, total_iterations, num_trials, step)
+    all_steps = list(range(0, total_iterations+1, step))
     
-    for i in range(num_trials):
-        print(">> TRIAL ", i)
-        mcts = MonteCarloTreeSearch(env, total_iterations, False)
-        mcts_initial_state, rewards = mcts.mcts(mcts.iterations)
-        all_rewards.append(rewards)
-
-    all_rewards_averaged = np.average(all_rewards, axis=0)
     print(all_rewards_averaged)
+    #plot_rewards(all_steps, all_rewards_averaged, True, "./img/prova50.png") # save plot
+    plot_rewards(all_steps, all_rewards_averaged)
 
-    plt.plot(list(range(0, total_iterations+1, 10000)), all_rewards_averaged)
-    plt.xlabel("Steps")
-    plt.ylabel("Average Rewards")
-    plt.show()
 
     #mcts.print_best_path(mcts_initial_state, False)
 

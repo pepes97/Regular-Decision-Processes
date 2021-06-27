@@ -5,6 +5,7 @@
 ```
 $ conda create -n rdp python=3.8.10
 $ conda activate rdp
+$ pip install -r requirements.txt
 $ cd ./nonmarkov-envs
 $ pip install .
 ```
