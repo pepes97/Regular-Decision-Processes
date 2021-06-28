@@ -35,31 +35,43 @@ def main():
     env = RDPEnv(env_spec, markovian=False, stop_prob=0.0, episode_length=15)
     env.reset()
     
-    total_iterations = 140000
-    step = 20000
-    num_trials = 50
+    # total_iterations = 140000
+    # step = 20000
+    # num_trials = 50
 
-    all_rewards_averaged = compute_average_rewards(env, total_iterations, num_trials, step)
-    all_steps = list(range(0, total_iterations+1, step))
+    # all_rewards_averaged = compute_average_rewards(env, total_iterations, num_trials, step)
+    # all_steps = list(range(0, total_iterations+1, step))
     
-    print(all_rewards_averaged)
-    #plot_rewards(all_steps, all_rewards_averaged, True, "./img/prova50.png") # save plot
-    plot_rewards(all_steps, all_rewards_averaged)
-
+    # print(all_rewards_averaged)
+    # #plot_rewards(all_steps, all_rewards_averaged, True, "./img/prova50.png") # save plot
+    # plot_rewards(all_steps, all_rewards_averaged)
+    
 
     #mcts.print_best_path(mcts_initial_state, False)
 
-    '''s3m = S3M(env)
+    s3m = S3M(env)
     
-    for i in range(200):
+    
+
+    # print(s3m.traces)
+    for i in range(5):
         s3m.sample()
-        s3m.base_distribution(5)
-        s3m.merger(1)
-    print(s3m.max_dkl)'''
+        print(s3m.traces)
+        s3m.base_distribution(1)
+        print("Tr\n"+ str(s3m.tr) + "\n" + str(len(s3m.tr)))
+        s3m.merge_histories([0.01])
+
+    # for i in range(200):
+    #     s3m.sample()
+    #     s3m.base_distribution(5)
+    #     s3m.merger(1)
+    # print(s3m.max_dkl)
+    
     #print(s3m.tr)
     #print(s3m.traces)
     # for k in s3m.traces:
     #     print(f"{k}:\n {s3m.traces[k]}\n\n")
+    
 
     return
     
