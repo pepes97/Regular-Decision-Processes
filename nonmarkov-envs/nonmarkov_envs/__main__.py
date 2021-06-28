@@ -54,13 +54,13 @@ def main():
     
 
     # print(s3m.traces)
-    for i in range(5):
+    for i in range(1000):
         s3m.sample()
-        print(s3m.traces)
-        s3m.base_distribution(1)
-        print("Tr\n"+ str(s3m.tr) + "\n" + str(len(s3m.tr)))
-        s3m.merge_histories([0.01])
-
+        s3m.base_distribution(50)
+        s3m.merge_histories([0.01, 0.03, 0.05])
+    
+    print("BEST LOSS")
+    print(s3m.best_loss)
     # for i in range(200):
     #     s3m.sample()
     #     s3m.base_distribution(5)

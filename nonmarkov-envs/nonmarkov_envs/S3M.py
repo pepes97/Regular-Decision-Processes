@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import ast
-from math import log, log2
+from math import log, log2, inf
 from numpy.random import normal
 
 class S3M():
@@ -13,6 +13,7 @@ class S3M():
         self.h_a = []
         self.max_dkl = 0
         self.all_actions = list(self.env.specification.ACTIONS)
+        self.best_loss = float("inf")
         
     def sample(self, mode=0):
         ''' Sample a new trace by exploring the environment
@@ -138,14 +139,14 @@ class S3M():
         # Tr' {h: {a: {o: P(o|h,a)}}} 
         h_aP = self.h_a.copy()
         trP = self.tr.copy()
-        merge = 1
+
         while len(h_aP) > 1:
             (h1,a1) = random.choice(h_aP)
             all_obs1 = list(self.tr[h1][a1])
             min_d_kl = float('inf')
             min_tuple = ()        
             for (h2, a2) in self.h_a:
-                if h1 != h2 or a1 != a2 :
+                if h1 != h2 or a1 != a2:
                     all_obs2 = list(self.tr[h2][a2])              
                     if sorted(all_obs1) == sorted(all_obs2):
                         # print("SOPRA\nTrP1")
@@ -161,7 +162,7 @@ class S3M():
                             d_kl = self.kl_divergence(prob_seq1, prob_seq2)
                         else:
                             d_kl = self.kl_divergence(prob_seq2, prob_seq1)
-                        print(f"Siamo belli e questa è la Dkl: {d_kl}\n\n")
+                        # print(f"Siamo belli e questa è la Dkl: {d_kl}\n\n")
                         if d_kl < epsilon:
                             if d_kl < min_d_kl:
                                 min_tuple = (h2,a2)
@@ -184,7 +185,7 @@ class S3M():
                 self.h_a.remove(min_tuple)
 
                 if h1 != min_tuple[0]:
-                    del trP[min_tuple[0]]
+                    del trP[min_tuple[0]][min_tuple[1]]
                           
             else:
                 h_aP.remove((h1,a1))          
@@ -195,20 +196,15 @@ class S3M():
         '''
             Merge current histories by using different epsilon
         '''
-        best_loss = float('inf')
         for epsilon in list_eps:
             TrP = self.merger(epsilon)
-            print("TRP")
-            print(len(TrP))
+            print(f"TR {len(self.tr)}|{sum([len(list(self.tr[v])) for v in self.tr])} - TRP {len(TrP)}|{sum([len(list(TrP[v])) for v in TrP])}")
             
             loss = self.calc_loss(TrP)
-            print("LOSS")
-            print(loss)
-            if loss < best_loss:
+            if loss < self.best_loss and loss != 0.:
                 self.tr = TrP.copy() # Vedere se copy risulta essere necessario
-                best_loss = loss
-            print("BEST LOSS")
-            print(best_loss)
+                self.best_loss = loss
+        
         return
 
     def calc_loss(self, TrP):
@@ -222,10 +218,10 @@ class S3M():
             P_h_Tr[h] = 1 # P(h | Tr )
             for i in range(3, len(lh), 3):
                 h_curr = str(lh[:i-2])
-                if h_curr in list(TrP):
+                if h_curr in list(TrP) and lh[i-2] in list(TrP[h_curr]) and lh[i] in list(TrP[h_curr][lh[i-2]]):
                     P_h_Tr[h] *= TrP[h_curr][lh[i-2]][lh[i]] 
             P_h_Tr[h] = log(P_h_Tr[h])
-        loss = - sum(P_h_Tr.values()) # MANCA SECONDO TERMINE
+        loss = -sum(P_h_Tr.values()) # MANCA SECONDO TERMINE
         return loss
     
     def mealy_generator(self):
