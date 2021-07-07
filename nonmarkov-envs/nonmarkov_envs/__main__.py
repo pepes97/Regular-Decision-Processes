@@ -43,21 +43,31 @@ def main():
     # all_steps = list(range(0, total_iterations+1, step))
     
     # print(all_rewards_averaged)
-    # #plot_rewards(all_steps, all_rewards_averaged, True, "./img/prova50.png") # save plot
+    # plot_rewards(all_steps, all_rewards_averaged, True, "./img/prova_today.png") # save plot
     # plot_rewards(all_steps, all_rewards_averaged)
     
 
     #mcts.print_best_path(mcts_initial_state, False)
 
     s3m = S3M(env)
-    
-    
 
-    # print(s3m.traces)
-    for i in range(1000):
+    print(s3m.traces)
+    #with open("prova.txt", 'w') as fp:
+    for i in range(100):
         s3m.sample()
-        s3m.base_distribution(50)
+        s3m.base_distribution(1)
+        #fp.write(f"Step: {i} '\n")
+        print(f"Step: {i} \n")
+        print(f"Traces: {len(s3m.traces)}")
+        #fp.write(f"Len Traces: {len(s3m.traces)} \n")
+        
         s3m.merge_histories([0.01, 0.03, 0.05])
+        print(f"HAC: {s3m.hac}")
+        print(f"CP: {s3m.c}")
+        print(f"BEST LOSS: {s3m.best_loss} \n")
+        #fp.write(f"Len Tr: {len(s3m.tr)}, Len TrP: {len(s3m.trp)} \n")
+        #fp.write(f"Best Loss :{s3m.best_loss} \n")
+        #fp.write("\n")
     
     print("BEST LOSS")
     print(s3m.best_loss)

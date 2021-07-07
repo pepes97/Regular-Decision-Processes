@@ -3,6 +3,7 @@ import numpy as np
 import ast
 from math import log, log2, inf
 from numpy.random import normal
+import copy 
 
 class S3M():
     def __init__(self, env):
@@ -12,6 +13,7 @@ class S3M():
         self.tr = {} # {h: {a: {s: P(s|h,a)}}}
         self.h_a = []
         self.max_dkl = 0
+        self.trp = {}
         self.all_actions = list(self.env.specification.ACTIONS)
         self.best_loss = float("inf")
         
@@ -61,7 +63,6 @@ class S3M():
                         self.traces[str(current_trace)][0][selected_action].append(new_state)
                     self.traces[str(current_trace)][1] += 1
 
-                 
                 current_trace.append(selected_action)
                 current_trace.append(reward)
                 current_trace.append(new_state)                
@@ -104,29 +105,12 @@ class S3M():
                         if not (h,a) in self.h_a:
                             self.h_a.append((h,a))
 
-                        
-                        
-                # for a in self.traces[h][0]: # Traces {h: [{a: [s...]}, count]} 
-                #     count_tot = self.traces[h][1]
-                #     for s in self.traces[h][0][a]:
-                #         count_obs = self.traces[h][0][a].count(s)
-                #         if not h in self.tr:
-                #             self.tr[h] = {a:{s: count_obs/count_tot}}
-                #         else:
-                #             if not a in self.tr[h]:
-                #                 self.tr[h][a] = {s: count_obs/count_tot}
-                #             else:
-                #                 self.tr[h][a][s] = count_obs/count_tot
-                #         if not (h,a,s) in self.h_a_s:
-                #             self.h_a_s.append((h,a,s))
-
-
         return 
 
 	
     # calculate the kl divergence
     def kl_divergence(self, p, q):
-        return round(sum(p[i] * np.log(p[i]/q[i]) if p[i] != 0 and q[i] != 0 else 0 for i in range(len(p))), 4)
+        return sum(p[i] * np.log(p[i]/q[i]) if p[i] != 0 and q[i] != 0 else 0 for i in range(len(p)))
 
     def merger(self,epsilon):
         '''
@@ -137,91 +121,146 @@ class S3M():
         # In caso affermativo mettiamo una delle due nel dizionario Tr' (quale? Forse è uguale. Rima baciata)
         # Iteriamo su Tr' fintanto che non ci siano più cluster accorpabili
         # Tr' {h: {a: {o: P(o|h,a)}}} 
-        h_aP = self.h_a.copy()
-        trP = self.tr.copy()
+        
+        self.hac = {}
+        self.c = {}
+        idx = 0
+        for h in self.tr:
+            self.hac[h] = {}
+            for a in self.tr[h]:
+                self.hac[h][a] = idx
+                self.c[idx] = [{}, 0]
+                for o in self.tr[h][a]:
+                    self.c[idx][0][o]= self.tr[h][a][o]
+                    self.c[idx][1] = self.traces[h][1] 
+                idx+=1
 
+        h_aP = copy.deepcopy(self.h_a)
+        hacP = copy.deepcopy(self.hac)
+        cP = copy.deepcopy(self.c)
+        
+        # for h in self.tr:
+        #     print(F"ACTIONS {list(self.tr[h].keys())} OF H {h}")
+        # for h,a in self.h_a:
+        #     tmp = []
+        #     for h2,a2 in self.h_a:
+        #         if h == h2:
+        #             if a not in tmp:
+        #                 tmp.append(a)  
+        #     print(f"ACTIONSSSS :{tmp} of h_a: {h}")
+        
+            
         while len(h_aP) > 1:
             (h1,a1) = random.choice(h_aP)
-            all_obs1 = list(self.tr[h1][a1])
+            index_c1 = hacP[h1][a1]
+            all_obs1 = list(cP[index_c1][0])
             min_d_kl = float('inf')
-            min_tuple = ()        
+            min_tuple = () 
+             
             for (h2, a2) in self.h_a:
+        
+                index_c2 = hacP[h2][a2]
+                if index_c1 == index_c2:
+                    continue
                 if h1 != h2 or a1 != a2:
-                    all_obs2 = list(self.tr[h2][a2])              
+                    all_obs2 = list(cP[index_c2][0])             
                     if sorted(all_obs1) == sorted(all_obs2):
-                        # print("SOPRA\nTrP1")
-                        # print(trP[h1][a1])
-                        # print("TrP2")
-                        # print(trP[h2][a2])
-                        # print(all_obs1)
-                        # print(all_obs2)
-                        prob_seq1 = [self.tr[h1][a1][obs] for obs in all_obs1]
-                        prob_seq2 = [self.tr[h2][a2][obs] for obs in all_obs2]
-                    
-                        if self.traces[h1][1] >= self.traces[h2][1]: # w1 >= w2 >= min_samples
+                        
+                        prob_seq1 = [cP[index_c1][0][obs] for obs in all_obs1]
+                        prob_seq2 = [cP[index_c2][0][obs] for obs in all_obs2]
+                        
+                        if cP[index_c1][1] >= cP[index_c2][1]: # w1 >= w2 >= min_samples
                             d_kl = self.kl_divergence(prob_seq1, prob_seq2)
                         else:
                             d_kl = self.kl_divergence(prob_seq2, prob_seq1)
-                        # print(f"Siamo belli e questa è la Dkl: {d_kl}\n\n")
+                        
+                        # if d_kl>0:
+                        #     print(f"DIVERGENCE: {d_kl}")
                         if d_kl < epsilon:
                             if d_kl < min_d_kl:
                                 min_tuple = (h2,a2)
                                 min_d_kl = d_kl
             if min_tuple != ():
-                # print(min_tuple)
-                # print(f"({h1},{a1})")
-                # print("TrP1")
-                # print(trP[h1][a1])
-                # print("TrP2")
-                # print(trP[min_tuple[0]][min_tuple[1]])
-                w1 = self.traces[h1][1]
-                w2 = self.traces[min_tuple[0]][1]
+            
+                w1 = cP[index_c1][1]
+                h_min = min_tuple[0]
+                a_min = min_tuple[1]
+                index_min = hacP[h_min][a_min]
+                w2 = cP[index_min][1]
                 w = w1+w2
                 for obs in all_obs1:
-                    trP[h1][a1][obs] = ( w1*self.tr[h1][a1][obs] + w2*self.tr[min_tuple[0]][min_tuple[1]][obs] ) / w  # Eq.(2)
-                
+                    cP[index_c1][0][obs] = ( w1*cP[index_c1][0][obs] + w2*cP[index_min][0][obs])/w  # Eq.(2)
+
+                for hh in hacP:
+                    for aa in hacP[hh]:
+                        if index_min == hacP[hh][aa]:
+                            hacP[hh][aa] = index_c1
+
+                del cP[index_min]
+
+                #print(f"KEYS DEL: {index_min}")
+
+                cP[index_c1][1] = w
+                hacP[h_min][a_min] = index_c1
+
                 if min_tuple in h_aP:
                     h_aP.remove(min_tuple)
                 self.h_a.remove(min_tuple)
 
-                if h1 != min_tuple[0]:
-                    del trP[min_tuple[0]][min_tuple[1]]
-                          
             else:
                 h_aP.remove((h1,a1))          
-                        
-        return trP
+
+        
+        return hacP, cP
 
     def merge_histories(self,list_eps):
         '''
             Merge current histories by using different epsilon
         '''
         for epsilon in list_eps:
-            TrP = self.merger(epsilon)
-            print(f"TR {len(self.tr)}|{sum([len(list(self.tr[v])) for v in self.tr])} - TRP {len(TrP)}|{sum([len(list(TrP[v])) for v in TrP])}")
-            
-            loss = self.calc_loss(TrP)
-            if loss < self.best_loss and loss != 0.:
-                self.tr = TrP.copy() # Vedere se copy risulta essere necessario
+            hacP, cP = self.merger(epsilon)
+            #self.trp = TrP
+            #print(f"TR len{len(self.tr)}|{sum([len(list(self.tr[v])) for v in self.tr])} - TRP {len(TrP)}|{sum([len(list(TrP[v])) for v in TrP])}")
+            #print(f"Len TR: {len(self.tr)}, Len TrP: {len(TrP)}")
+            loss = self.calc_loss(hacP, cP)
+            print(f"CURRENT LOSS: {loss}")
+            if loss < self.best_loss and loss > 0.:
+                self.hac = copy.deepcopy(hacP)
+                self.c = copy.deepcopy(cP)# Vedere se copy risulta essere necessario
+                for h in self.hac:
+                    for a in self.hac[h]:
+                        index_c = self.hac[h][a]
+                        for o in self.c[index_c][0]:
+                            self.tr[h][a][o] = self.c[index_c][0][o]
+
                 self.best_loss = loss
-        
         return
 
-    def calc_loss(self, TrP):
+    def calc_loss(self, hacP, cP):
         '''
             Compute the loss by exploiting function (3)
         '''
         # Tr: {h: {a: {o: P(o|h,a)}}} 
+        lamba = 0.5
         P_h_Tr = {}
-        for h in list(TrP):
+        num_prob = 0
+        for h in list(hacP):
             lh = ast.literal_eval(h)
             P_h_Tr[h] = 1 # P(h | Tr )
             for i in range(3, len(lh), 3):
-                h_curr = str(lh[:i-2])
-                if h_curr in list(TrP) and lh[i-2] in list(TrP[h_curr]) and lh[i] in list(TrP[h_curr][lh[i-2]]):
-                    P_h_Tr[h] *= TrP[h_curr][lh[i-2]][lh[i]] 
+                curr_history = str(lh[:i-2])
+                last_action = lh[i-2]
+                next_obs = lh[i]
+                index_cp = hacP[curr_history][last_action]
+                P_h_Tr[h] *= cP[index_cp][0][next_obs]
+
+            for a in hacP[h]:
+                index_cc = hacP[h][a]
+                num_prob += len(list(cP[index_cc]))
+
             P_h_Tr[h] = log(P_h_Tr[h])
-        loss = -sum(P_h_Tr.values()) # MANCA SECONDO TERMINE
+
+        loss = -sum(P_h_Tr.values()) - lamba* num_prob
         return loss
     
     def mealy_generator(self):
