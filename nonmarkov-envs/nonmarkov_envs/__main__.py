@@ -6,6 +6,7 @@ from nonmarkov_envs.specs.rotating_maze import RotatingMaze
 import numpy as np
 from matplotlib import pyplot as plt 
 import sys
+from tqdm import tqdm
 
 # sys.setrecursionlimit(100000)
 
@@ -50,27 +51,33 @@ def main():
     #mcts.print_best_path(mcts_initial_state, False)
 
     s3m = S3M(env)
-
-    print(s3m.traces)
     #with open("prova.txt", 'w') as fp:
-    for i in range(100):
+    for i in tqdm(range(10000)):
         s3m.sample()
-        s3m.base_distribution(1)
+        # print(s3m.traces['[(0, 0)]'])
+        # print(len(s3m.traces))
+        s3m.base_distribution(10)
+        # print(s3m.tr)
+        
         #fp.write(f"Step: {i} '\n")
-        print(f"Step: {i} \n")
-        print(f"Traces: {len(s3m.traces)}")
+        # print(f"Step: {i}")
+        # print(f"Traces: {len(s3m.traces)}")
         #fp.write(f"Len Traces: {len(s3m.traces)} \n")
         
-        s3m.merge_histories([0.01, 0.03, 0.05])
-        print(f"HAC: {s3m.hac}")
-        print(f"CP: {s3m.c}")
-        print(f"BEST LOSS: {s3m.best_loss} \n")
+        s3m.merge_histories([0.1, 0.3, 0.5])
+        #print(f"Tr: {s3m.tr}")
+        #print(f"Cl: {s3m.cl}")
+        # if s3m.best_loss != loss :
+        #     print(f"Iteration {i}")
+        #     loss = s3m.best_loss
+        # print(f"BEST LOSS: {s3m.best_loss} \n")
         #fp.write(f"Len Tr: {len(s3m.tr)}, Len TrP: {len(s3m.trp)} \n")
         #fp.write(f"Best Loss :{s3m.best_loss} \n")
         #fp.write("\n")
     
     print("BEST LOSS")
     print(s3m.best_loss)
+
     # for i in range(200):
     #     s3m.sample()
     #     s3m.base_distribution(5)

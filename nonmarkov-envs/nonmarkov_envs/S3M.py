@@ -1,21 +1,23 @@
 import random
 import numpy as np
 import ast
-from math import log, log2, inf
+from math import log, log2, inf, sqrt
 from numpy.random import normal
 import copy 
+
 
 class S3M():
     def __init__(self, env):
         self.env = env
         self.initial_obs = self.env.specification.initial_state[:2]
-        self.traces = {} # {h: [{a: [s...]}, count]} 
-        self.tr = {} # {h: {a: {s: P(s|h,a)}}}
-        self.h_a = []
+        self.traces = {} # {h: [{a: {o: count_obs}}, count]}       # OLD: {h: [{a: [o...]}, count]}
+        self.tr = {} # {h: {a: cluster_idx}}                       # OLD: {h: {a: {s: P(s|h,a)}}}
+        self.cl = {} # {cluster_idx: [{o: P(o|h,a)}, weight]}
+        # self.h_a = []
         self.max_dkl = 0
-        self.trp = {}
         self.all_actions = list(self.env.specification.ACTIONS)
         self.best_loss = float("inf")
+        self.next_cluster_idx = 0 
         
     def sample(self, mode=0):
         ''' Sample a new trace by exploring the environment
@@ -25,9 +27,9 @@ class S3M():
         self.env.reset()
         current_trace = [self.initial_obs]
         state = self.initial_obs
-        n_a_s = {}
-        f_a_s = {}
-        p_a_s = {}
+        n_a_s = {} # number of times an action a is applied to a state s
+        f_a_s = {} # 1 - n_a_s / (sum_a n_a_s)
+        p_a_s = {} # f_a_s / sum_a f_a_s | Probability of selecting an action a from s
 
         if mode == 0:
 
@@ -53,14 +55,14 @@ class S3M():
                 new_state, reward, done, _ = self.env.step(selected_action)
                 
                 if self.traces.get(str(current_trace)) == None:
-                    self.traces[str(current_trace)] = [{selected_action: [new_state]}, 1]
-                    
-                #if not selected_action in self.traces[current_trace][0]:   
+                    self.traces[str(current_trace)] = [{selected_action: {new_state: 1}}, 1]    # {h: [{a: {o: count_obs}}, count]}
                 else:
                     if not selected_action in self.traces[str(current_trace)][0]:
-                        self.traces[str(current_trace)][0][selected_action] = [new_state]
+                        self.traces[str(current_trace)][0][selected_action] = {new_state: 1}
+                    elif not new_state in self.traces[str(current_trace)][0][selected_action]:
+                        self.traces[str(current_trace)][0][selected_action][new_state] = 1
                     else:
-                        self.traces[str(current_trace)][0][selected_action].append(new_state)
+                        self.traces[str(current_trace)][0][selected_action][new_state] += 1
                     self.traces[str(current_trace)][1] += 1
 
                 current_trace.append(selected_action)
@@ -83,27 +85,34 @@ class S3M():
         # Selezionare le storie che compaiono almeno min_samples
         # Per ogni storia h, per ogni azione a e per ogni stato ottenuto applicando a ad h, facciamo:
             # count di quante volte un'osservazione compare dopo applicato a ad h
-            # count delle volte totali in cui un'azione è stata applicata ad h
+            # count delle volte totali in cui un'azione a è stata applicata ad h
             # P(o|h,a) = count1 / count2
             # Mettere P(o|h,a) in Tr
-        for h in self.traces:   # {h: [{a: [s...]}, count]} 
+
+        for h in self.traces:   # {h: [{a: {o: count_obs}}, count]}   # OLD: {h: [{a: [o...]}, count]}
             if self.traces[h][1] >= min_samples:
                 for a in list(self.traces[h][0]):
-                    count_tot = len(self.traces[h][0][a])
+                    count_tot = sum(self.traces[h][0][a].values())
                     for obs in self.traces[h][0][a]:
-                        count_obs = self.traces[h][0][a].count(obs)
+                        count_obs = self.traces[h][0][a][obs]
                         p = count_obs/count_tot
 
                         if not h in self.tr:
-                            self.tr[h] = {a:{obs: p}}     # tr = {h: {a: {o: p}}}
+                            self.tr[h] = {a: self.next_cluster_idx}     # tr = {h: {a: cluster_idx}}
+                            self.cl[self.next_cluster_idx] = [{obs: p}, count_tot]      # cl = {cluster_idx: [{o: P(o|h,a)}, weight]}
+                            self.next_cluster_idx += 1
                         else:
                             if not a in self.tr[h]:
-                                self.tr[h][a] = {obs: p}
+                                self.tr[h][a] = self.next_cluster_idx
+                                self.cl[self.next_cluster_idx] = [{obs: p}, count_tot]
+                                self.next_cluster_idx += 1
                             else:
-                                self.tr[h][a][obs] = p
-                        
-                        if not (h,a) in self.h_a:
-                            self.h_a.append((h,a))
+                                c_index = self.tr[h][a]
+                                self.cl[c_index][0][obs] = p
+                                self.cl[c_index][1] = count_tot    # Possible bug! See note (1)
+
+                        # if not (h,a) in self.h_a:
+                        #     self.h_a.append((h,a))
 
         return 
 
@@ -121,122 +130,94 @@ class S3M():
         # In caso affermativo mettiamo una delle due nel dizionario Tr' (quale? Forse è uguale. Rima baciata)
         # Iteriamo su Tr' fintanto che non ci siano più cluster accorpabili
         # Tr' {h: {a: {o: P(o|h,a)}}} 
-        
-        self.hac = {}
-        self.c = {}
-        idx = 0
-        for h in self.tr:
-            self.hac[h] = {}
-            for a in self.tr[h]:
-                self.hac[h][a] = idx
-                self.c[idx] = [{}, 0]
-                for o in self.tr[h][a]:
-                    self.c[idx][0][o]= self.tr[h][a][o]
-                    self.c[idx][1] = self.traces[h][1] 
-                idx+=1
 
-        h_aP = copy.deepcopy(self.h_a)
-        hacP = copy.deepcopy(self.hac)
-        cP = copy.deepcopy(self.c)
-        
-        # for h in self.tr:
-        #     print(F"ACTIONS {list(self.tr[h].keys())} OF H {h}")
-        # for h,a in self.h_a:
-        #     tmp = []
-        #     for h2,a2 in self.h_a:
-        #         if h == h2:
-        #             if a not in tmp:
-        #                 tmp.append(a)  
-        #     print(f"ACTIONSSSS :{tmp} of h_a: {h}")
-        
-            
-        while len(h_aP) > 1:
-            (h1,a1) = random.choice(h_aP)
-            index_c1 = hacP[h1][a1]
-            all_obs1 = list(cP[index_c1][0])
+        trP = copy.deepcopy(self.tr)
+        clP = copy.deepcopy(self.cl)       
+
+        cluster_indices = sorted(list(clP))
+        if len(cluster_indices) > 1:
+            max_idx = cluster_indices[-1]
+            curr_idx = cluster_indices[0]
+        else:
+            max_idx = -1
+            curr_idx = -1
+
+        while curr_idx < max_idx:
+
+            all_obs1 = list(clP[curr_idx][0])
             min_d_kl = float('inf')
-            min_tuple = () 
-             
-            for (h2, a2) in self.h_a:
-        
-                index_c2 = hacP[h2][a2]
-                if index_c1 == index_c2:
-                    continue
-                if h1 != h2 or a1 != a2:
-                    all_obs2 = list(cP[index_c2][0])             
-                    if sorted(all_obs1) == sorted(all_obs2):
-                        
-                        prob_seq1 = [cP[index_c1][0][obs] for obs in all_obs1]
-                        prob_seq2 = [cP[index_c2][0][obs] for obs in all_obs2]
-                        
-                        if cP[index_c1][1] >= cP[index_c2][1]: # w1 >= w2 >= min_samples
-                            d_kl = self.kl_divergence(prob_seq1, prob_seq2)
-                        else:
-                            d_kl = self.kl_divergence(prob_seq2, prob_seq1)
-                        
-                        # if d_kl>0:
-                        #     print(f"DIVERGENCE: {d_kl}")
-                        if d_kl < epsilon:
-                            if d_kl < min_d_kl:
-                                min_tuple = (h2,a2)
-                                min_d_kl = d_kl
-            if min_tuple != ():
+            min_index = -1 
+
+            for i in range(1,len(cluster_indices)):  # Possible bug: see Note (2)
+                idx_c2 = cluster_indices[i]
+                all_obs2 = list(clP[idx_c2][0])
+                
+                if sorted(all_obs1) == sorted(all_obs2):
+                    prob_seq1 = [clP[curr_idx][0][obs] for obs in all_obs1]
+                    prob_seq2 = [clP[idx_c2][0][obs] for obs in all_obs2]
+                    
+                    if clP[curr_idx][1] >= clP[idx_c2][1]: # w1 >= w2 >= min_samples
+                        d_kl = self.kl_divergence(prob_seq1, prob_seq2)
+                    else:
+                        d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+
+                    if d_kl < epsilon and d_kl < min_d_kl:
+                        min_index = idx_c2
+                        min_d_kl = d_kl
+
+            if min_index != -1:
             
-                w1 = cP[index_c1][1]
-                h_min = min_tuple[0]
-                a_min = min_tuple[1]
-                index_min = hacP[h_min][a_min]
-                w2 = cP[index_min][1]
+                w1 = clP[curr_idx][1]
+                w2 = clP[min_index][1]                
                 w = w1+w2
-                for obs in all_obs1:
-                    cP[index_c1][0][obs] = ( w1*cP[index_c1][0][obs] + w2*cP[index_min][0][obs])/w  # Eq.(2)
+                for obs in all_obs1: # {cluster_idx: [{o: P(o|h,a)}, weight]}
+                    clP[curr_idx][0][obs] = ( w1*clP[curr_idx][0][obs] + w2*clP[min_index][0][obs])/w  # Eq.(2)
 
-                for hh in hacP:
-                    for aa in hacP[hh]:
-                        if index_min == hacP[hh][aa]:
-                            hacP[hh][aa] = index_c1
+                for h in trP:
+                    for a in trP[h]:
+                        if min_index == trP[h][a]:
+                            trP[h][a] = curr_idx
 
-                del cP[index_min]
-
-                #print(f"KEYS DEL: {index_min}")
-
-                cP[index_c1][1] = w
-                hacP[h_min][a_min] = index_c1
-
-                if min_tuple in h_aP:
-                    h_aP.remove(min_tuple)
-                self.h_a.remove(min_tuple)
+                del clP[min_index]
+                clP[curr_idx][1] = w
+                cluster_indices.remove(min_index)
 
             else:
-                h_aP.remove((h1,a1))          
+                cluster_indices.remove(curr_idx)    # Può essere cambiata con curr_idx += 1 se Note (2) è corretta
 
+            if len(cluster_indices) > 1:
+                curr_idx = cluster_indices[0]
+                max_idx = cluster_indices[-1]
+            else:
+                break         
         
-        return hacP, cP
+        return trP, clP
+
 
     def merge_histories(self,list_eps):
         '''
             Merge current histories by using different epsilon
         '''
         for epsilon in list_eps:
-            hacP, cP = self.merger(epsilon)
-            #self.trp = TrP
-            #print(f"TR len{len(self.tr)}|{sum([len(list(self.tr[v])) for v in self.tr])} - TRP {len(TrP)}|{sum([len(list(TrP[v])) for v in TrP])}")
-            #print(f"Len TR: {len(self.tr)}, Len TrP: {len(TrP)}")
-            loss = self.calc_loss(hacP, cP)
-            print(f"CURRENT LOSS: {loss}")
+            trP, cP = self.merger(epsilon)
+            
+            
+            if len(trP):
+                loss = self.calc_loss(trP, cP)
+            else:
+                loss = float("inf")
+            
+            #print(f"CURRENT LOSS: {loss}")
+
             if loss < self.best_loss and loss > 0.:
-                self.hac = copy.deepcopy(hacP)
-                self.c = copy.deepcopy(cP)# Vedere se copy risulta essere necessario
-                for h in self.hac:
-                    for a in self.hac[h]:
-                        index_c = self.hac[h][a]
-                        for o in self.c[index_c][0]:
-                            self.tr[h][a][o] = self.c[index_c][0][o]
+                print(f"New best loss! Old: {self.best_loss}, new: {loss}")
+                self.tr = copy.deepcopy(trP)
+                self.cl = copy.deepcopy(cP)# Vedere se copy risulta essere necessario
 
                 self.best_loss = loss
         return
 
-    def calc_loss(self, hacP, cP):
+    def calc_loss(self, trP, cP):
         '''
             Compute the loss by exploiting function (3)
         '''
@@ -244,23 +225,29 @@ class S3M():
         lamba = 0.5
         P_h_Tr = {}
         num_prob = 0
-        for h in list(hacP):
+        for h in list(trP):
+            #print("DENTROOO")
+            #print(trP)
             lh = ast.literal_eval(h)
             P_h_Tr[h] = 1 # P(h | Tr )
             for i in range(3, len(lh), 3):
                 curr_history = str(lh[:i-2])
                 last_action = lh[i-2]
                 next_obs = lh[i]
-                index_cp = hacP[curr_history][last_action]
+                index_cp = trP[curr_history][last_action]
                 P_h_Tr[h] *= cP[index_cp][0][next_obs]
-
-            for a in hacP[h]:
-                index_cc = hacP[h][a]
-                num_prob += len(list(cP[index_cc]))
 
             P_h_Tr[h] = log(P_h_Tr[h])
 
-        loss = -sum(P_h_Tr.values()) - lamba* num_prob
+        for cluster_idx in list(cP):
+            num_prob += len(cP[cluster_idx][0])
+        
+
+        # if len(trP) > 0:
+        loss = - sum(P_h_Tr.values()) - lamba * num_prob
+        # else:
+        #     print("Dentro!")
+        #     loss = float("inf")
         return loss
     
     def mealy_generator(self):
