@@ -8,7 +8,6 @@ from matplotlib import pyplot as plt
 import sys
 from tqdm import tqdm
 
-# sys.setrecursionlimit(100000)
 
 def plot_rewards(x, y, save_fig = False, path = ""):
     plt.plot(x, y)
@@ -46,48 +45,24 @@ def main():
     # print(all_rewards_averaged)
     # plot_rewards(all_steps, all_rewards_averaged, True, "./img/prova_today.png") # save plot
     # plot_rewards(all_steps, all_rewards_averaged)
-    
 
-    #mcts.print_best_path(mcts_initial_state, False)
+    # mcts.print_best_path(mcts_initial_state, False)
 
     s3m = S3M(env)
-    #with open("prova.txt", 'w') as fp:
-    for i in tqdm(range(10000)):
-        s3m.sample()
-        # print(s3m.traces['[(0, 0)]'])
-        # print(len(s3m.traces))
-        s3m.base_distribution(50)
-        # print(s3m.tr)
-        
-        #fp.write(f"Step: {i} '\n")
-        # print(f"Step: {i}")
-        # print(f"Traces: {len(s3m.traces)}")
-        #fp.write(f"Len Traces: {len(s3m.traces)} \n")
-        
-        s3m.merge_histories([0.01, 0.03, 0.05])
-        
-        #print(f"Tr: {s3m.tr}")
-        #print(f"Cl: {s3m.cl}")
-        # if s3m.best_loss != loss :
-        #     print(f"Iteration {i}")
-        #     loss = s3m.best_loss
-        # print(f"BEST LOSS: {s3m.best_loss} \n")
-        #fp.write(f"Len Tr: {len(s3m.tr)}, Len TrP: {len(s3m.trp)} \n")
-        #fp.write(f"Best Loss :{s3m.best_loss} \n")
-        #fp.write("\n")
-    
+    for i in tqdm(range(20)):
 
-    # for i in range(200):
-    #     s3m.sample()
-    #     s3m.base_distribution(5)
-    #     s3m.merger(1)
-    # print(s3m.max_dkl)
-    
-    #print(s3m.tr)
-    #print(s3m.traces)
-    # for k in s3m.traces:
-    #     print(f"{k}:\n {s3m.traces[k]}\n\n")
-    
+        # Sampling
+        s3m.sample()
+
+        # Base distribution
+        s3m.base_distribution(5)
+        
+        # Merger
+        s3m.merge_histories([2, 1, 3])
+        file_name = s3m.mealy_file_generator()
+        if file_name!="":
+            s3m.mealy_machine(file_name)
+        #print(f"Best loss: {s3m.best_loss}")
 
     return
     

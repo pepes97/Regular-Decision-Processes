@@ -1,0 +1,13 @@
+// produced with flexfringe // ../../flexfringe/dfasat/flexfringe --ini=../../flexfringe/dfasat/ini/batch-mealy.ini prova.txt.dat 
+digraph DFA {
+	0 [label="root" shape=box];
+		I -> 0;
+	0 [ label="0:#7
+" , penwidth=2.07944];
+		0 -> 0 [label="o1a1
+"  ];
+		0 -> 0 [label="o1a2
+"  ];
+		0 -> 0 [label="o1a4
+2"  ];
+}

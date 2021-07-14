@@ -1,0 +1,22 @@
+[
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o1a2" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o1a1" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o1a2" , "o1a4/2" ],
+			"score" : 0
+		}
+]

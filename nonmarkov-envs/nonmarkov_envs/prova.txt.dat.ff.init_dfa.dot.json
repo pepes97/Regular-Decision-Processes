@@ -1,0 +1,67 @@
+{
+	"types" : [
+"1"
+	],
+	"alphabet" : [
+"o1a1",
+"o1a2",
+"o1a4"
+	],
+	"nodes" : [
+		{
+			"id" : 0,
+			"source" :  -1,
+			"label" : "",
+			"size" : 3,
+			"level" : 0,
+			"style" : "",
+			"isred" :  1,
+			"issink" :  0,
+			"isblue" :  0,
+			"data" :  null,
+			"traces" : [ 2,1,0]
+		},
+		{
+			"id" : 1,
+			"source" :  0,
+			"label" : "",
+			"size" : 1,
+			"level" : 1,
+			"style" : "",
+			"isred" :  0,
+			"issink" :  0,
+			"isblue" :  1,
+			"data" :  null,
+			"traces" : [ 0]
+		},
+		{
+			"id" : 2,
+			"source" :  0,
+			"label" : "",
+			"size" : 2,
+			"level" : 1,
+			"style" : "",
+			"isred" :  0,
+			"issink" :  0,
+			"isblue" :  1,
+			"data" :  null,
+			"traces" : [ 2,1]
+		}
+	],
+	"edges" : [
+		{
+			"id" : "0_1",
+			"source" : "0",
+			"target" : "1",
+			"name": "o1a1",
+			"appearances": ""}
+,
+		{
+			"id" : "0_2",
+			"source" : "0",
+			"target" : "2",
+			"name": "o1a2",
+			"appearances": ""}
+
+	]
+}
