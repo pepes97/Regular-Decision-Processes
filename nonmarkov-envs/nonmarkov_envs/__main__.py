@@ -56,7 +56,7 @@ def main():
         s3m.sample()
         # print(s3m.traces['[(0, 0)]'])
         # print(len(s3m.traces))
-        s3m.base_distribution(10)
+        s3m.base_distribution(50)
         # print(s3m.tr)
         
         #fp.write(f"Step: {i} '\n")
@@ -64,7 +64,8 @@ def main():
         # print(f"Traces: {len(s3m.traces)}")
         #fp.write(f"Len Traces: {len(s3m.traces)} \n")
         
-        s3m.merge_histories([0.1, 0.3, 0.5])
+        s3m.merge_histories([0.01, 0.03, 0.05])
+        
         #print(f"Tr: {s3m.tr}")
         #print(f"Cl: {s3m.cl}")
         # if s3m.best_loss != loss :
@@ -75,8 +76,6 @@ def main():
         #fp.write(f"Best Loss :{s3m.best_loss} \n")
         #fp.write("\n")
     
-    print("BEST LOSS")
-    print(s3m.best_loss)
 
     # for i in range(200):
     #     s3m.sample()

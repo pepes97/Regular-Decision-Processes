@@ -13,7 +13,6 @@ class S3M():
         self.traces = {} # {h: [{a: {o: count_obs}}, count]}       # OLD: {h: [{a: [o...]}, count]}
         self.tr = {} # {h: {a: cluster_idx}}                       # OLD: {h: {a: {s: P(s|h,a)}}}
         self.cl = {} # {cluster_idx: [{o: P(o|h,a)}, weight]}
-        # self.h_a = []
         self.max_dkl = 0
         self.all_actions = list(self.env.specification.ACTIONS)
         self.best_loss = float("inf")
@@ -90,7 +89,7 @@ class S3M():
             # Mettere P(o|h,a) in Tr
 
         for h in self.traces:   # {h: [{a: {o: count_obs}}, count]}   # OLD: {h: [{a: [o...]}, count]}
-            if self.traces[h][1] >= min_samples:
+            if self.traces[h][1] >= min_samples:  # BUG: DEVE ESSERE CALCOLATO SU HA!
                 for a in list(self.traces[h][0]):
                     count_tot = sum(self.traces[h][0][a].values())
                     for obs in self.traces[h][0][a]:
@@ -109,7 +108,7 @@ class S3M():
                             else:
                                 c_index = self.tr[h][a]
                                 self.cl[c_index][0][obs] = p
-                                self.cl[c_index][1] = count_tot    # Possible bug! See note (1)
+                                self.cl[c_index][1] = count_tot  # BUG: non deve essere sovrascritto il peso, ma incrementato
 
                         # if not (h,a) in self.h_a:
                         #     self.h_a.append((h,a))
@@ -117,7 +116,7 @@ class S3M():
         return 
 
 	
-    # calculate the kl divergence
+    # compute the kl divergence
     def kl_divergence(self, p, q):
         return sum(p[i] * np.log(p[i]/q[i]) if p[i] != 0 and q[i] != 0 else 0 for i in range(len(p)))
 
@@ -198,23 +197,24 @@ class S3M():
         '''
             Merge current histories by using different epsilon
         '''
+
+        self.best_loss = float("inf")
+
         for epsilon in list_eps:
             trP, cP = self.merger(epsilon)
-            
-            
+                        
             if len(trP):
                 loss = self.calc_loss(trP, cP)
             else:
                 loss = float("inf")
-            
-            #print(f"CURRENT LOSS: {loss}")
 
             if loss < self.best_loss and loss > 0.:
-                print(f"New best loss! Old: {self.best_loss}, new: {loss}")
+                # print(f"New best loss! Old: {self.best_loss}, new: {loss}")
                 self.tr = copy.deepcopy(trP)
-                self.cl = copy.deepcopy(cP)# Vedere se copy risulta essere necessario
+                self.cl = copy.deepcopy(cP)
 
                 self.best_loss = loss
+
         return
 
     def calc_loss(self, trP, cP):
@@ -238,13 +238,18 @@ class S3M():
                 P_h_Tr[h] *= cP[index_cp][0][next_obs]
 
             P_h_Tr[h] = log(P_h_Tr[h])
+        
+        # Manca un altro prodotto con l'ultima osservazione prodotta dall'ultima azione!
 
         for cluster_idx in list(cP):
             num_prob += len(cP[cluster_idx][0])
         
 
         # if len(trP) > 0:
-        loss = - sum(P_h_Tr.values()) - lamba * num_prob
+        loss = - sum(P_h_Tr.values()) + lamba * log(num_prob)
+        # print(- sum(P_h_Tr.values()))
+        # print(log(num_prob))
+        # print(f"loss: {loss}")
         # else:
         #     print("Dentro!")
         #     loss = float("inf")
