@@ -3,49 +3,84 @@
 "1"
 	],
 	"alphabet" : [
+"o2a4",
+"o2a3",
+"o2a2",
+"o2a1",
+"o1a3",
 "o1a1",
+"o3a4",
 "o1a2",
-"o1a4"
+"o1a4",
+"o3a2",
+"o3a3",
+"o3a1"
 	],
 	"nodes" : [
 		{
 			"id" : 0,
 			"source" :  -1,
 			"label" : "",
-			"size" : 3,
+			"size" : 32,
 			"level" : 0,
 			"style" : "",
 			"isred" :  1,
 			"issink" :  0,
 			"isblue" :  0,
 			"data" :  null,
-			"traces" : [ 2,1,0]
+			"traces" : [ 31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0]
 		},
 		{
 			"id" : 1,
 			"source" :  0,
 			"label" : "",
-			"size" : 1,
+			"size" : 9,
 			"level" : 1,
 			"style" : "",
 			"isred" :  0,
 			"issink" :  0,
 			"isblue" :  1,
 			"data" :  null,
-			"traces" : [ 0]
+			"traces" : [ 31,16,15,12,11,9,7,6,0]
 		},
 		{
 			"id" : 2,
 			"source" :  0,
 			"label" : "",
-			"size" : 2,
+			"size" : 8,
 			"level" : 1,
 			"style" : "",
 			"isred" :  0,
 			"issink" :  0,
 			"isblue" :  1,
 			"data" :  null,
-			"traces" : [ 2,1]
+			"traces" : [ 30,26,24,18,17,10,4,1]
+		},
+		{
+			"id" : 3,
+			"source" :  0,
+			"label" : "",
+			"size" : 8,
+			"level" : 1,
+			"style" : "",
+			"isred" :  0,
+			"issink" :  0,
+			"isblue" :  1,
+			"data" :  null,
+			"traces" : [ 29,28,27,22,21,19,3,2]
+		},
+		{
+			"id" : 4,
+			"source" :  0,
+			"label" : "",
+			"size" : 7,
+			"level" : 1,
+			"style" : "",
+			"isred" :  0,
+			"issink" :  0,
+			"isblue" :  1,
+			"data" :  null,
+			"traces" : [ 25,23,20,14,13,8,5]
 		}
 	],
 	"edges" : [
@@ -53,14 +88,28 @@
 			"id" : "0_1",
 			"source" : "0",
 			"target" : "1",
-			"name": "o1a1",
+			"name": "o2a4",
 			"appearances": ""}
 ,
 		{
 			"id" : "0_2",
 			"source" : "0",
 			"target" : "2",
-			"name": "o1a2",
+			"name": "o2a3",
+			"appearances": ""}
+,
+		{
+			"id" : "0_3",
+			"source" : "0",
+			"target" : "3",
+			"name": "o2a2",
+			"appearances": ""}
+,
+		{
+			"id" : "0_4",
+			"source" : "0",
+			"target" : "4",
+			"name": "o2a1",
 			"appearances": ""}
 
 	]

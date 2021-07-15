@@ -5,8 +5,8 @@ from nonmarkov_envs.S3M import S3M
 from nonmarkov_envs.specs.rotating_maze import RotatingMaze
 import numpy as np
 from matplotlib import pyplot as plt 
-import sys
 from tqdm import tqdm
+from nonmarkov_envs.utils import show
 
 
 def plot_rewards(x, y, save_fig = False, path = ""):
@@ -49,21 +49,26 @@ def main():
     # mcts.print_best_path(mcts_initial_state, False)
 
     s3m = S3M(env)
-    for i in tqdm(range(20)):
+    data = None
+    for i in tqdm(range(2000)):
 
         # Sampling
         s3m.sample()
 
         # Base distribution
-        s3m.base_distribution(5)
+        s3m.base_distribution(50)
         
         # Merger
         s3m.merge_histories([2, 1, 3])
-        file_name = s3m.mealy_file_generator()
-        if file_name!="":
-            s3m.mealy_machine(file_name)
-        #print(f"Best loss: {s3m.best_loss}")
 
+        # Mealy file generator
+        file_name = s3m.mealy_file_generator()
+
+        # Mealy Machine
+        if file_name!="":
+            data = s3m.mealy_machine(file_name)
+
+    show(data)
     return
     
 if __name__ == "__main__":

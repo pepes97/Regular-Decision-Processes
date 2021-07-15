@@ -3,26 +3,109 @@
 "1"
 	],
 	"alphabet" : [
+"o2a4",
+"o2a3",
+"o2a2",
+"o2a1",
+"o1a3",
 "o1a1",
+"o3a4",
 "o1a2",
-"o1a4"
+"o1a4",
+"o3a2",
+"o3a3",
+"o3a1"
 	],
 	"nodes" : [
 		{
 			"id" : 0,
 			"source" :  -1,
 			"label" : "",
-			"size" : 7,
+			"size" : 74,
 			"level" : 0,
 			"style" : "",
 			"isred" :  1,
 			"issink" :  0,
 			"isblue" :  0,
 			"data" :  null,
-			"traces" : [ 2,1,0,2,0,2,1]
+			"traces" : [ 31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,23,16,7,30,28,10,19,18,12,29,25,8,14,14,13,24,15,21,15,6,25,23,20,14,13,8,5,31,29,28,27,22,21,19,3,30,26,24,18,17,10,4]
+		},
+		{
+			"id" : 1,
+			"source" :  0,
+			"label" : "",
+			"size" : 27,
+			"level" : 1,
+			"style" : "",
+			"isred" :  1,
+			"issink" :  0,
+			"isblue" :  0,
+			"data" :  null,
+			"traces" : [ 31,16,15,12,11,9,7,6,0,25,20,29,28,27,22,21,19,3,2,30,26,24,18,17,10,4,1]
+		},
+		{
+			"id" : 2,
+			"source" :  0,
+			"label" : "",
+			"size" : 10,
+			"level" : 3,
+			"style" : "",
+			"isred" :  1,
+			"issink" :  0,
+			"isblue" :  0,
+			"data" :  null,
+			"traces" : [ 18,17,12,11,30,26,28,22,29,27]
+		},
+		{
+			"id" : 3,
+			"source" :  1,
+			"label" : "",
+			"size" : 3,
+			"level" : 2,
+			"style" : "",
+			"isred" :  1,
+			"issink" :  0,
+			"isblue" :  0,
+			"data" :  null,
+			"traces" : [ 12,11,9]
 		}
 	],
 	"edges" : [
+		{
+			"id" : "0_1",
+			"source" : "0",
+			"target" : "1",
+			"name": "o2a4",
+			"appearances": ""}
+,
+		{
+			"id" : "0_1",
+			"source" : "0",
+			"target" : "1",
+			"name": "o2a3",
+			"appearances": ""}
+,
+		{
+			"id" : "0_1",
+			"source" : "0",
+			"target" : "1",
+			"name": "o2a2",
+			"appearances": ""}
+,
+		{
+			"id" : "0_0",
+			"source" : "0",
+			"target" : "0",
+			"name": "o2a1",
+			"appearances": ""}
+,
+		{
+			"id" : "0_2",
+			"source" : "0",
+			"target" : "2",
+			"name": "o1a3",
+			"appearances": ""}
+,
 		{
 			"id" : "0_0",
 			"source" : "0",
@@ -34,6 +117,13 @@
 			"id" : "0_0",
 			"source" : "0",
 			"target" : "0",
+			"name": "o3a4",
+			"appearances": ""}
+,
+		{
+			"id" : "0_2",
+			"source" : "0",
+			"target" : "2",
 			"name": "o1a2",
 			"appearances": ""}
 ,
@@ -42,6 +132,83 @@
 			"source" : "0",
 			"target" : "0",
 			"name": "o1a4",
+			"appearances": ""}
+,
+		{
+			"id" : "0_0",
+			"source" : "0",
+			"target" : "0",
+			"name": "o3a2",
+			"appearances": ""}
+,
+		{
+			"id" : "0_1",
+			"source" : "0",
+			"target" : "1",
+			"name": "o3a3",
+			"appearances": ""}
+,
+		{
+			"id" : "0_0",
+			"source" : "0",
+			"target" : "0",
+			"name": "o3a1",
+			"appearances": ""}
+,
+		{
+			"id" : "1_0",
+			"source" : "1",
+			"target" : "0",
+			"name": "o2a4",
+			"appearances": ""}
+,
+		{
+			"id" : "1_0",
+			"source" : "1",
+			"target" : "0",
+			"name": "o1a3",
+			"appearances": ""}
+,
+		{
+			"id" : "1_0",
+			"source" : "1",
+			"target" : "0",
+			"name": "o1a1",
+			"appearances": ""}
+,
+		{
+			"id" : "1_3",
+			"source" : "1",
+			"target" : "3",
+			"name": "o1a2",
+			"appearances": ""}
+,
+		{
+			"id" : "1_0",
+			"source" : "1",
+			"target" : "0",
+			"name": "o1a4",
+			"appearances": ""}
+,
+		{
+			"id" : "2_0",
+			"source" : "2",
+			"target" : "0",
+			"name": "o2a4",
+			"appearances": ""}
+,
+		{
+			"id" : "2_0",
+			"source" : "2",
+			"target" : "0",
+			"name": "o1a4",
+			"appearances": ""}
+,
+		{
+			"id" : "3_2",
+			"source" : "3",
+			"target" : "2",
+			"name": "o2a4",
 			"appearances": ""}
 
 	]

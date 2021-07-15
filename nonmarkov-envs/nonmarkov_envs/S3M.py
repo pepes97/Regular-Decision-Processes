@@ -1,12 +1,10 @@
 import random
 import numpy as np
 import ast
-from math import log, log2, inf, sqrt
-from numpy.random import normal
+from math import log
 import copy 
 import itertools
-from .utils import flexfringe,show
-from IPython.display import Image, display
+from .utils import flexfringe
 
 
 class S3M():
@@ -296,4 +294,4 @@ class S3M():
     
     def mealy_machine(self, name):
         data = flexfringe(name, ini="../../flexfringe/dfasat/ini/batch-mealy.ini")
-        show(data)
+        return data

@@ -1,22 +1,138 @@
 [
 		{
+			"type" : "extend", 
+			"red" : [ "o2a4" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : [ "o2a4" ],
+			"blue" : [ "o2a3" ],
+			"score" : 1
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : [ "o2a4" ],
+			"blue" : [ "o2a2" ],
+			"score" : 7
+		}
+,
+		{
 			"type" : "merge", 
 			"red" : 0,
-			"blue" : [ "o1a2" ],
+			"blue" : [ "o2a4" , "o2a4/0" ],
 			"score" : 0
 		}
 ,
 		{
 			"type" : "merge", 
 			"red" : 0,
-			"blue" : [ "o1a1" ],
+			"blue" : [ "o2a1" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "extend", 
+			"red" : [ "o2a3" , "o2a4/0" , "o1a3/6" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : [ "o2a3" , "o2a4/0" , "o1a3/6" ],
+			"blue" : [ "o2a3" , "o2a4/0" , "o1a2/9" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "extend", 
+			"red" : [ "o2a4" , "o1a2/9" ],
 			"score" : 0
 		}
 ,
 		{
 			"type" : "merge", 
 			"red" : 0,
-			"blue" : [ "o1a2" , "o1a4/2" ],
+			"blue" : [ "o2a4" , "o1a3/6" ],
+			"score" : 1
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a3" , "o2a4/0" , "o1a4/9" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a1" , "o3a2/8" ],
+			"score" : 1
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a1" , "o3a4/8" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : [ "o2a4" ],
+			"blue" : [ "o2a1" , "o3a3/20" ],
+			"score" : 1
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : [ "o2a3" , "o2a4/0" , "o1a3/6" ],
+			"blue" : [ "o2a4" , "o1a2/9" , "o2a4/0" ],
+			"score" : 1
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a3" , "o2a4/0" , "o1a3/6" , "o1a4/6" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a3" , "o2a4/0" , "o1a1/6" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a3" , "o2a4/0" , "o1a2/9" , "o2a4/1" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a4" , "o1a1/6" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a4" , "o1a4/9" ],
+			"score" : 0
+		}
+,
+		{
+			"type" : "merge", 
+			"red" : 0,
+			"blue" : [ "o2a1" , "o3a1/20" ],
 			"score" : 0
 		}
 ]
