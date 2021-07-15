@@ -21,7 +21,7 @@ def flexfringe(*args, **kwargs):
       command += ["--" + key + "=" + kwargs[key]]
 
   result = subprocess.run(["../../flexfringe/dfasat/flexfringe",] + command + [args[0]], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-  print(result.returncode, result.stdout, result.stderr)
+  # print(result.returncode, result.stdout, result.stderr)
 
   
   try:

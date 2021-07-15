@@ -5,7 +5,7 @@ from math import log
 import copy 
 import itertools
 from .utils import flexfringe
-
+from .mealy_machine import MM
 
 class S3M():
     def __init__(self, env):
@@ -252,16 +252,16 @@ class S3M():
         
         sample_number = len(self.tr)
 
-        maps_actions = {}
+        self.maps_actions = {}
         num_actions = 1
         list_actions = [str(a) for a in self.all_actions]
 
         for a in self.all_actions:
-            maps_actions[a] = "a"+str(num_actions)
+            self.maps_actions[a] = "a"+str(num_actions)
             num_actions+=1
 
         list_obs = []
-        maps_obs = {}
+        self.maps_obs = {}
         num_obs = 1
 
         for c in self.cl:
@@ -269,7 +269,7 @@ class S3M():
             for o in obs_cluster:
                 if not o in list_obs:
                     list_obs.append(o)
-                    maps_obs[o] = "o"+str(num_obs)
+                    self.maps_obs[o] = "o"+str(num_obs)
                     num_obs+=1
         alphabet_size = len([e for e in itertools.product(list_obs,list_actions)])
 
@@ -284,7 +284,7 @@ class S3M():
                         obs = lha[i-2]
                         action = lha[i-1]
                         index_cluster = self.tr[str(lha[:i])]
-                        f.write(f"{maps_obs[obs]}{maps_actions[action]}/{index_cluster} ")
+                        f.write(f"{self.maps_obs[obs]}{self.maps_actions[action]}/{index_cluster} ")
                     f.write("\n")
 
             f.close()
@@ -294,4 +294,10 @@ class S3M():
     
     def mealy_machine(self, name):
         data = flexfringe(name, ini="../../flexfringe/dfasat/ini/batch-mealy.ini")
-        return data
+
+        mealy_machine = MM(f"{name}.ff.final.dot.json")
+        mealy_machine.build_mealy()
+
+        return mealy_machine, data
+
+    
