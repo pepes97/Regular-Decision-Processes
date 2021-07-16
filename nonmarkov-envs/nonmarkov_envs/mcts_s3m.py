@@ -72,7 +72,6 @@ class MCTS_s3m():
                 print(reward)
 
             iterations -= 1
-            #return self.mcts(iterations-1)
 
         print(f"iteration: {self.iterations}, reward: {self.total/(self.iterations)}")
         self.rewards.append(self.total/(self.iterations))
@@ -98,12 +97,14 @@ class MCTS_s3m():
                     print(f"selected state: {best_child.state}, {best_action}")
 
                 state, reward, done, _ = self.env.step(best_action)
-                mapped_action = self.map_actions[best_action]
-                mapped_state = self.map_obs[mcts_state.state[0]]
-                oa = mapped_state + mapped_action
-                mealy_node = self.mealy_machine.current_node
-                self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
                 
+                mealy_node = self.mealy_machine.current_node
+                if mealy_node != "-1":
+                    mapped_action = self.map_actions[best_action]
+                    mapped_state = self.map_obs[mcts_state.state[0]]
+                    oa = mapped_state + mapped_action
+                    self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+
                 node = MonteCarloTreeSearchNode(state = (state,self.mealy_machine.current_node),
                                         parent = mcts_state,
                                         parent_action=best_action,
@@ -123,16 +124,11 @@ class MCTS_s3m():
 
                 return self.select(mcts_state, done, reward, steps+1, select_flag) 
         
-        #print("selected state:", mcts_state.state)
         return mcts_state, done, reward, steps
 
 
 
     def expand(self, mcts_state, steps):
-        '''theta = self.env.theta(mcts_state.state)
-        tau = self.env.tau(mcts_state.state)
-        print("tau ", tau)'''
-
             
         if len(mcts_state.children) < len(self.all_actions):
             selected_action = random.choice(mcts_state._untried_actions) #exploration
@@ -143,11 +139,13 @@ class MCTS_s3m():
 
 
         state, reward, done, _ = self.env.step(selected_action)
-        mapped_action = self.map_actions[selected_action]
-        mapped_state = self.map_obs[mcts_state.state[0]]
-        oa = mapped_state + mapped_action
+        
         mealy_node = self.mealy_machine.current_node
-        self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+        if mealy_node != "-1":
+            mapped_action = self.map_actions[selected_action]
+            mapped_state = self.map_obs[mcts_state.state[0]]
+            oa = mapped_state + mapped_action
+            self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
 
         node = MonteCarloTreeSearchNode(state = (state,self.mealy_machine.current_node),
                                         parent = mcts_state, 
@@ -184,22 +182,26 @@ class MCTS_s3m():
                                                              
             state, reward, done, info = self.env.step(action)
 
-            mapped_action = self.map_actions[action]
-            mapped_state = self.map_obs[current_simulation_state.state[0]]
-            oa = mapped_state + mapped_action
+
+            
             mealy_node = self.mealy_machine.current_node
-            self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+            if mealy_node != "-1":
+                mapped_action = self.map_actions[action]
+                mapped_state = self.map_obs[current_simulation_state.state[0]]
+                oa = mapped_state + mapped_action
+                try:
+                    self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+                except KeyError:
+                    self.mealy_machine.current_node = "-1"
 
             current_simulation_state = MonteCarloTreeSearchNode(state = (state,self.mealy_machine.current_node),
                                                                 parent=current_simulation_state,
                                                                 parent_action=action)
 
-            #print(state, reward, info)
             steps += 1
 
         if self.debug:
             print("simulated state: ", current_simulation_state.state)
-        #print(reward)
         return reward, steps
 
     def simulation_policy(self, possible_moves):

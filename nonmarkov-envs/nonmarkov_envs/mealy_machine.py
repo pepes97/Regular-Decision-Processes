@@ -17,4 +17,4 @@ class MM():
                 self.edges[source] = {name: target}
             else:
                 self.edges[source][name] = target
-        print(self.edges)
+        #print(self.edges)

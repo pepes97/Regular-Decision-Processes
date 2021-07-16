@@ -76,7 +76,7 @@ class S3M():
                 state, reward, done = pureExploration(state)
                 
 
-    def base_distribution(self, min_samples):
+    def base_distribution(self):
         '''
             Compute P(o|h,a)
         '''
@@ -92,30 +92,30 @@ class S3M():
 
         
         for ha in self.traces:   # {ha: [{o: count_obs}, count_ha]}   
-            if self.traces[ha][1] >= min_samples:  # BUG: DEVE ESSERE CALCOLATO SU HA!
-                count_tot = self.traces[ha][1]
-                for obs in self.traces[ha][0]:
-                    count_obs = self.traces[ha][0][obs]
-                    p = count_obs/count_tot
+            #if self.traces[ha][1] >= min_samples:  # BUG: DEVE ESSERE CALCOLATO SU HA!
+            count_tot = self.traces[ha][1]
+            for obs in self.traces[ha][0]:
+                count_obs = self.traces[ha][0][obs]
+                p = count_obs/count_tot
 
-                    if not ha in self.tr:
-                        self.tr[ha] = self.next_cluster_idx     # tr = {ha: cluster_idx}
-                        self.cl[self.next_cluster_idx] = [{obs: p}, count_obs]      # cl = {cluster_idx: [{o: P(o|h,a)}, weight]}
-                        self.next_cluster_idx += 1
-                        
-                    else:
-                        c_index = self.tr[ha]
-                        self.cl[c_index][0][obs] = p
-                        self.cl[c_index][1] +=count_obs
+                if not ha in self.tr:
+                    self.tr[ha] = self.next_cluster_idx     # tr = {ha: cluster_idx}
+                    self.cl[self.next_cluster_idx] = [{obs: p}, count_obs]      # cl = {cluster_idx: [{o: P(o|h,a)}, weight]}
+                    self.next_cluster_idx += 1
+                    
+                else:
+                    c_index = self.tr[ha]
+                    self.cl[c_index][0][obs] = p
+                    self.cl[c_index][1] +=count_obs
 
-        return 
+        return
 
 	
     # compute the kl divergence
     def kl_divergence(self, p, q):
         return sum(p[i] * np.log(p[i]/q[i]) if p[i] != 0 and q[i] != 0 else 0 for i in range(len(p)))
 
-    def merger(self,epsilon):
+    def merger(self,epsilon, min_samples):
         '''
             Merge distributions associated to two similar traces
         '''
@@ -129,9 +129,11 @@ class S3M():
         clP = copy.deepcopy(self.cl)       
 
         del_clusters = []
+
         for c1 in clP:
             all_obs1 = list(clP[c1][0])
             min_d_kl = float('inf')
+            d_kl = float('inf')
             min_index = -1
             if c1 in del_clusters:
                 continue
@@ -146,9 +148,10 @@ class S3M():
                     prob_seq1 = [clP[c1][0][obs] for obs in all_obs1]
                     prob_seq2 = [clP[c2][0][obs] for obs in all_obs2]
                     
-                    if clP[c1][1] >= clP[c2][1]: # w1 >= w2 >= min_samples
+                    if clP[c1][1] >= clP[c2][1] and clP[c2][1]>=min_samples: # w1 >= w2 >= min_samples
                         d_kl = self.kl_divergence(prob_seq1, prob_seq2)
-                    else:
+
+                    elif clP[c1][1] < clP[c2][1] and clP[c1][1]>=min_samples: # w1 < w2 >= min_samples
                         d_kl = self.kl_divergence(prob_seq2, prob_seq1)
 
                     if d_kl < epsilon and d_kl < min_d_kl:
@@ -170,13 +173,54 @@ class S3M():
                 del_clusters.append(min_index)
                 clP[c1][1] = w
 
+        # for id_cluster in del_clusters:
+        #     del clP[id_cluster]
+
+        #del_clusters = []
+        # secondo for
+        for c1 in clP:
+            all_obs1 = list(clP[c1][0])
+            min_d_kl = float('inf')
+            d_kl = float('inf')
+            min_index = -1
+            if c1 in del_clusters:
+                continue
+        
+            for c2 in clP:  # Possible bug: see Note (2)
+                all_obs2 = list(clP[c2][0])
+                if c2 == c1 or c2 in del_clusters:
+                    continue
+                
+                if sorted(all_obs1) == sorted(all_obs2):
+                    prob_seq1 = [clP[c1][0][obs] for obs in all_obs1]
+                    prob_seq2 = [clP[c2][0][obs] for obs in all_obs2]
+                    
+
+                    if clP[c1][1] >= clP[c2][1] and clP[c1][1]<min_samples: # w1 >= w2 >= min_samples
+                        d_kl = self.kl_divergence(prob_seq1, prob_seq2)
+                    elif clP[c1][1] < clP[c2][1] and clP[c2][1]<min_samples:
+                        d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+
+                    if d_kl == 0:
+                        w1 = clP[c1][1]
+                        w2 = clP[c2][1]                
+                        w = w1+w2
+                        for obs in all_obs1: # {cluster_idx: [{o: P(o|h,a)}, weight]}
+                            clP[c1][0][obs] = ( w1*clP[c1][0][obs] + w2*clP[c2][0][obs])/w  # Eq.(2)
+
+                        for ha in trP:
+                            if c2 == trP[ha]:
+                                trP[ha] = c1
+
+                        del_clusters.append(c2)
+                        clP[c1][1] = w
+
         for id_cluster in del_clusters:
             del clP[id_cluster]     
         
         return trP, clP
 
-
-    def merge_histories(self,list_eps):
+    def merge_histories(self,list_eps, min_samples):
         '''
             Merge current histories by using different epsilon
         '''
@@ -184,7 +228,7 @@ class S3M():
         self.best_loss = float("inf")
 
         for epsilon in list_eps:
-            trP, cP = self.merger(epsilon)
+            trP, cP = self.merger(epsilon, min_samples)
             
             if len(trP):
                 loss = self.calc_loss(trP, cP)

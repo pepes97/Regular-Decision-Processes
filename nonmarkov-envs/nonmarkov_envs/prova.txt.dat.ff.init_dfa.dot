@@ -2,6 +2,6 @@
 digraph DFA {
 	0 [label="root" shape=box];
 		I -> 0;
-	0 [ label="0:#32
-" , penwidth=3.49651];
+	0 [ label="0:#1553
+" , penwidth=7.34859];
 }

@@ -62,36 +62,31 @@ def main():
     # mcts.print_best_path(mcts_initial_state, False)
 
     s3m = S3M(env)
-    data = None
-    for i in tqdm(range(2000)):
+    for i in tqdm(range(500)):
 
         # Sampling
         s3m.sample()
 
         # Base distribution
-        s3m.base_distribution(50)
+        s3m.base_distribution()
         
         # Merger
-        s3m.merge_histories([2, 1, 3])
+        s3m.merge_histories([0.2, 0.5, 3], 30)
 
         # Mealy file generator
         file_name = s3m.mealy_file_generator()
-
-        mealy_machine = None
+        
         # Mealy Machine
-        if file_name!="":
-            mealy_machine, data = s3m.mealy_machine(file_name)
+        mealy_machine, data = s3m.mealy_machine(file_name)
         
-        total_iterations = 10000
-        step = 2000
-        num_trials = 50
+    total_iterations = 1000
+    step = 200
+    num_trials = 50
 
-        if mealy_machine != None:
-            all_rewards_averaged = compute_average_rewards_mealy(env, total_iterations, num_trials, step, mealy_machine, s3m)
-            all_steps = list(range(0, total_iterations+1, step))
-        
-
-    show(data)
+    all_rewards_averaged = compute_average_rewards_mealy(env, total_iterations, num_trials, step, mealy_machine, s3m)
+    all_steps = list(range(0, total_iterations+1, step))
+    
+    plot_rewards(all_steps, all_rewards_averaged)
     return
     
 if __name__ == "__main__":
