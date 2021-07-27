@@ -12,10 +12,10 @@ class RotatingMAB():
 
     def __init__(
         self,
-        nb_arms: int = 4,
-        win_probs: list = [0.9, 0.2, 0.3, 0.1],
+        nb_arms: int = 2,
+        win_probs: list = [0.9, 0.2],
         reward_win: int = 100,
-        initial_state: tuple = (0)
+        initial_state: tuple = (0,)
     ):
         # States and actions
         self.NB_ARMS = nb_arms

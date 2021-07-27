@@ -10,7 +10,7 @@ from .mealy_machine import MM
 class S3M():
     def __init__(self, env):
         self.env = env
-        self.initial_obs = self.env.specification.initial_state[:2]
+        self.initial_obs = self.env.specification.initial_state
         self.traces = {} # {ha: [{o: count_obs}, count_ha]}       
         self.tr = {} # {ha: cluster_idx}}                      
         self.cl = {} # {cluster_idx: [{o: P(o|h,a)}, weight]}
@@ -65,8 +65,8 @@ class S3M():
                         self.traces[str(current_trace)][0][new_state] += 1
                     self.traces[str(current_trace)][1] += 1
 
-                current_trace.append(new_state)         
-
+                current_trace.append(new_state)  
+                
                 return new_state, reward, done
             
             done = False 
@@ -173,47 +173,47 @@ class S3M():
                 del_clusters.append(min_index)
                 clP[c1][1] = w
 
-        # for id_cluster in del_clusters:
-        #     del clP[id_cluster]
-
-        #del_clusters = []
+        for id_cluster in del_clusters:
+            del clP[id_cluster]    
+        
+        del_clusters = []
+        
         # secondo for
         for c1 in clP:
+            if clP[c1][1] >= min_samples or c1 in del_clusters:
+                continue
             all_obs1 = list(clP[c1][0])
             min_d_kl = float('inf')
             d_kl = float('inf')
             min_index = -1
-            if c1 in del_clusters:
-                continue
-        
+                    
             for c2 in clP:  # Possible bug: see Note (2)
-                all_obs2 = list(clP[c2][0])
-                if c2 == c1 or c2 in del_clusters:
+                if c2 == c1 or clP[c2][1] < min_samples or c2 in del_clusters:
                     continue
-                
+                all_obs2 = list(clP[c2][0])
                 if sorted(all_obs1) == sorted(all_obs2):
                     prob_seq1 = [clP[c1][0][obs] for obs in all_obs1]
                     prob_seq2 = [clP[c2][0][obs] for obs in all_obs2]
                     
+                    d_kl = self.kl_divergence(prob_seq1, prob_seq2)
 
-                    if clP[c1][1] >= clP[c2][1] and clP[c1][1]<min_samples: # w1 >= w2 >= min_samples
-                        d_kl = self.kl_divergence(prob_seq1, prob_seq2)
-                    elif clP[c1][1] < clP[c2][1] and clP[c2][1]<min_samples:
-                        d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+                    if d_kl < min_d_kl:
+                        min_index = c2
+                        min_d_kl = d_kl
 
-                    if d_kl == 0:
-                        w1 = clP[c1][1]
-                        w2 = clP[c2][1]                
-                        w = w1+w2
-                        for obs in all_obs1: # {cluster_idx: [{o: P(o|h,a)}, weight]}
-                            clP[c1][0][obs] = ( w1*clP[c1][0][obs] + w2*clP[c2][0][obs])/w  # Eq.(2)
+            if min_index != -1:    
+                w1 = clP[c1][1]
+                w2 = clP[min_index][1]                
+                w = w1+w2
+                for obs in all_obs1: # {cluster_idx: [{o: P(o|h,a)}, weight]}
+                    clP[min_index][0][obs] = ( w1*clP[c1][0][obs] + w2*clP[min_index][0][obs])/w  # Eq.(2)
 
-                        for ha in trP:
-                            if c2 == trP[ha]:
-                                trP[ha] = c1
+                for ha in trP:
+                    if c1 == trP[ha]:
+                        trP[ha] = min_index
 
-                        del_clusters.append(c2)
-                        clP[c1][1] = w
+                del_clusters.append(c1)
+                clP[min_index][1] = w
 
         for id_cluster in del_clusters:
             del clP[id_cluster]     
