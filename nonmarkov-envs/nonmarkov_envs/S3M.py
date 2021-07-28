@@ -56,6 +56,8 @@ class S3M():
                 new_state, reward, done, _ = self.env.step(selected_action)
                 
                 current_trace.append(selected_action)
+                # if new_state == (1,):
+                #     print("ciao")
                 if self.traces.get(str(current_trace)) == None:
                     self.traces[str(current_trace)] = [{new_state: 1}, 1]    # {ha: [{o: count_obs}, count_ha]}
                 else:
@@ -74,7 +76,7 @@ class S3M():
 
             while not done and reward==0:
                 state, reward, done = pureExploration(state)
-                
+            
 
     def base_distribution(self):
         '''
@@ -195,8 +197,8 @@ class S3M():
                     prob_seq1 = [clP[c1][0][obs] for obs in all_obs1]
                     prob_seq2 = [clP[c2][0][obs] for obs in all_obs2]
                     
-                    d_kl = self.kl_divergence(prob_seq1, prob_seq2)
-
+                    d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+                    #print(f"DIVERGENCE: {d_kl}")
                     if d_kl < min_d_kl:
                         min_index = c2
                         min_d_kl = d_kl
@@ -250,7 +252,7 @@ class S3M():
         '''
         # Tr: {ha: c}
         # CL: {c : [{o:P}, w]} 
-        lamba = 0.5
+        lamba = 100
         P_h_Tr = {}
         num_prob = 0
         for ha in list(trP):
@@ -308,6 +310,7 @@ class S3M():
         self.maps_obs = {}
         num_obs = 1
 
+
         for c in self.cl:
             obs_cluster = list(self.cl[c][0].keys())
             for o in obs_cluster:
@@ -316,7 +319,7 @@ class S3M():
                     self.maps_obs[o] = "o"+str(num_obs)
                     num_obs+=1
         alphabet_size = len([e for e in itertools.product(list_obs,list_actions)])
-
+        
         if sample_number !=0:
             name = "prova.txt.dat"
             with open(name, "w") as f:

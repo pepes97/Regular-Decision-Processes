@@ -35,25 +35,42 @@ class MonteCarloTreeSearch():
             if self.debug:
                 print("initial state: ", self.initial_mcts_state.state)
 
+            self.initial_mcts_state._number_of_visits += 1
+
             mcts_state, done, reward, steps = self.select(self.initial_mcts_state, False, 0, 0, True)
 
-            if done:
+            if done or reward == self.reward_goal:
+                normalized_reward = reward/steps
+                self.total+=normalized_reward
+
+                if self.debug:
+                    print(f"Normalized reward: {normalized_reward}")
+
                 if reward == self.reward_goal:
-                    normalized_reward = reward/steps
-                    self.total+=normalized_reward
+                    simulation_result = 1
+                    self.backpropagate(mcts_state, simulation_result)
+                else:
+                    simulation_result = -1
+                    self.backpropagate(mcts_state, simulation_result)
 
             else:
                 mcts_next_state, done, reward, steps = self.expand(mcts_state, steps)
-                #print("done: ", done, reward)
                 
                 if self.debug:
-                    print("expanded state: ", mcts_next_state.state)
+                    print("done: ", done, reward)
 
-                if done:
+                if done or reward == self.reward_goal:
+                    normalized_reward = reward/steps
+                    self.total+=normalized_reward
+
+                    if self.debug:
+                        print(f"Normalized reward: {normalized_reward}")
                     if reward == self.reward_goal:
-                        normalized_reward = reward/steps
-                        self.total+=normalized_reward
-
+                        simulation_result = 1
+                        self.backpropagate(mcts_next_state, simulation_result)
+                    else:
+                        simulation_result = -1
+                        self.backpropagate(mcts_next_state, simulation_result)
                 else:
                     normalized_reward = 0
                     reward, steps = self.simulate(mcts_next_state, done, reward, steps)
@@ -61,15 +78,22 @@ class MonteCarloTreeSearch():
                     if simulation_result == 1:
                         normalized_reward = self.reward_goal/steps
                         self.total+=normalized_reward
+
+                        if self.debug:
+                            print(f"Normalized reward: {normalized_reward}")
                     
-                    if self.debug:
-                        print(simulation_result, normalized_reward)
+                    # if self.debug:
+                    #     print(simulation_result, normalized_reward)
 
                     self.backpropagate(mcts_next_state, simulation_result)
             
             if self.debug:
-                print(reward)
+                print(f"Reward: {reward}")
 
+            if self.debug:
+                a = input()
+                while(a=="0"):
+                    a = input()
             iterations -= 1
             #return self.mcts(iterations-1)
 
@@ -84,25 +108,17 @@ class MonteCarloTreeSearch():
     def select(self, mcts_state, done, reward, steps, select_flag): #la select va sempre chiamata sulla radice
         if not done and len(mcts_state.children) > 0 and reward!=self.reward_goal and select_flag:
             
-            '''if best_child.q()<0:
-                best_child, done, reward, steps = self.expand(mcts_state, steps) #quando espandiamo un nuovo nodo, questo nodo non avrà figli, quindi la select uscirà al ciclo successivo
-                best_child._number_of_visits+=1
-                best_action = best_child.parent_action
-                #print(f"action:{best_action}, state: {best_child.state}")
-                mcts_state = best_child
-                print(f"selected state: {best_child.state}, {best_action}")
-                return self.select(mcts_state, done, reward, steps+1)'''
             if len(mcts_state.children) < len(self.all_actions):
                 select_flag = False
                 return self.select(mcts_state, done, reward, steps, select_flag)
 
             else:
                 best_child = self.best_child(mcts_state) 
-                best_child._number_of_visits+=1
                 best_action = best_child.parent_action
 
                 if self.debug:
-                    print(f"selected state: {best_child.state}, {best_action}")
+                    print(f"selected state: {best_child.state}, selected action: {best_action}")
+                    
 
                 state, reward, done, _ = self.env.step(best_action)
                 #print(f"action:{best_action}, state: {state}")
@@ -111,6 +127,8 @@ class MonteCarloTreeSearch():
                                         parent = mcts_state, 
                                         parent_action=best_action,
                                         _untried_actions=self.all_actions.copy())
+
+                node._number_of_visits+=1
 
                 found = False
                 for s in mcts_state.children:
@@ -144,8 +162,11 @@ class MonteCarloTreeSearch():
             best_child = self.best_child(mcts_state)  
             selected_action = best_child.parent_action
 
-
+        
         state, reward, done, _ = self.env.step(selected_action)
+
+        if self.debug:
+            print(f"expanded state: {state}, expanded action: {selected_action}")
 
         node = MonteCarloTreeSearchNode(state = state,
                                         parent = mcts_state, 
@@ -155,6 +176,7 @@ class MonteCarloTreeSearch():
         if node not in mcts_state.children:
             mcts_state.children.append(node)
 
+        node._number_of_visits+=1
 
         return node, done, reward, steps+1
 
@@ -163,6 +185,10 @@ class MonteCarloTreeSearch():
     def best_child(self, state, c_param=0.1):
         warnings.simplefilter('ignore', RuntimeWarning) 
         choices_weights = [(c.q() / c.n()) + c_param * np.sqrt((2 * np.log(c.parent.n()) / c.n())) if c.n()!=0 else 0 for c in state.children]
+        # print("-------")
+        # print([(c.q() / c.n()) if c.n()!=0 else float("inf") for c in state.children])
+        # print([np.sqrt((2 * np.log(c.parent.n()) / c.n())) if c.n()!=0 else float("inf") for c in state.children])
+        # print(choices_weights)
         return state.children[np.argmax(choices_weights)]
 
         #Invece di calcolare il valore del singolo nodo, potremmo calcolare il valore dell'azione, così da selezionare quella migliore.
@@ -209,27 +235,7 @@ class MonteCarloTreeSearch():
 
 
 
-    def print_best_path(self, state_mcts, done):
-        self.env.reset()
-        
-        while not done:
-            #print("current_state : ", state_mcts.state)
-            '''for child in state_mcts.children:
-                print(child.state, child.n(), child.q())'''
-            if len(state_mcts.children) > 0:
-                theta = self.env.theta(state_mcts.state)
-                tau = self.env.tau(state_mcts.state)
-
-                best_child = self.best_child(state_mcts)
-                best_child._number_of_visits+=1
-                best_action = best_child.parent_action
-                state, reward, done, _ = self.env.step(best_action)
-                best_child.state = tau[state]
-                print(f"State: {state_mcts.state}, Action: {best_action}, Reward: {reward}")
-
-                state_mcts = best_child
-        
-        print(f"State: {best_child.state}")
+    
             
         
 

@@ -36,24 +36,44 @@ class MCTS_s3m():
             if self.debug:
                 print("initial state: ", self.initial_mcts_state.state)
 
+            self.initial_mcts_state._number_of_visits += 1
+
             mcts_state, done, reward, steps = self.select(self.initial_mcts_state, False, 0, 0, True)
 
-            if done:
+            # modificato reward con done
+            if done or reward == self.reward_goal:
+                normalized_reward = reward/steps
+                self.total+=normalized_reward
+
+                if self.debug:
+                    print(f"Normalized reward: {normalized_reward}")
+
                 if reward == self.reward_goal:
-                    normalized_reward = reward/steps
-                    self.total+=normalized_reward
+                    simulation_result = 1
+                    self.backpropagate(mcts_state, simulation_result)
+                else:
+                    simulation_result = -1
+                    self.backpropagate(mcts_state, simulation_result)
 
             else:
                 mcts_next_state, done, reward, steps = self.expand(mcts_state, steps)
-                #print("done: ", done, reward)
                 
                 if self.debug:
-                    print("expanded state: ", mcts_next_state.state)
+                    print("done: ", done, reward)
+                
+                # modificato reward con done
+                if done or reward == self.reward_goal:
+                    normalized_reward = reward/steps
+                    self.total+=normalized_reward
 
-                if done:
+                    if self.debug:
+                        print(f"Normalized reward: {normalized_reward}")
                     if reward == self.reward_goal:
-                        normalized_reward = reward/steps
-                        self.total+=normalized_reward
+                        simulation_result = 1
+                        self.backpropagate(mcts_next_state, simulation_result)
+                    else:
+                        simulation_result = -1
+                        self.backpropagate(mcts_next_state, simulation_result)
 
                 else:
                     normalized_reward = 0
@@ -63,13 +83,18 @@ class MCTS_s3m():
                         normalized_reward = self.reward_goal/steps
                         self.total+=normalized_reward
                     
-                    if self.debug:
-                        print(simulation_result, normalized_reward)
+                        if self.debug:
+                            print(f"Normalized reward: {normalized_reward}")
 
                     self.backpropagate(mcts_next_state, simulation_result)
             
             if self.debug:
-                print(reward)
+                print(f"Reward: {reward}")
+
+            if self.debug:
+                a = input()
+                while(a=="0"):
+                    a = input()
 
             iterations -= 1
 
@@ -90,12 +115,11 @@ class MCTS_s3m():
 
             else:
                 best_child = self.best_child(mcts_state) 
-                best_child._number_of_visits+=1
                 best_action = best_child.parent_action
 
                 if self.debug:
-                    print(f"selected state: {best_child.state}, {best_action}")
-
+                    print(f"selected state: {best_child.state}, selected action: {best_action}")
+                
                 state, reward, done, _ = self.env.step(best_action)
                 
                 mealy_node = self.mealy_machine.current_node
@@ -103,12 +127,18 @@ class MCTS_s3m():
                     mapped_action = self.map_actions[best_action]
                     mapped_state = self.map_obs[mcts_state.state[0]]
                     oa = mapped_state + mapped_action
-                    self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+                    try:
+                        self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+                    except KeyError:
+                        self.mealy_machine.current_node = "-1"
+
 
                 node = MonteCarloTreeSearchNode(state = (state,self.mealy_machine.current_node),
                                         parent = mcts_state,
                                         parent_action=best_action,
                                         _untried_actions=self.all_actions.copy())
+
+                node._number_of_visits+=1
 
                 found = False
                 for s in mcts_state.children:
@@ -137,15 +167,23 @@ class MCTS_s3m():
             best_child = self.best_child(mcts_state)  
             selected_action = best_child.parent_action
 
-
         state, reward, done, _ = self.env.step(selected_action)
         
         mealy_node = self.mealy_machine.current_node
+
+        if self.debug:
+            print(f"expanded state: {state}, expanded action: {selected_action}")
+
+
         if mealy_node != "-1":
             mapped_action = self.map_actions[selected_action]
             mapped_state = self.map_obs[mcts_state.state[0]]
             oa = mapped_state + mapped_action
-            self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+            try:
+                self.mealy_machine.current_node = self.mealy_machine.edges[mealy_node][oa]
+            except KeyError:
+                self.mealy_machine.current_node = "-1"
+
 
         node = MonteCarloTreeSearchNode(state = (state,self.mealy_machine.current_node),
                                         parent = mcts_state, 
@@ -155,6 +193,7 @@ class MCTS_s3m():
         if node not in mcts_state.children:
             mcts_state.children.append(node)
 
+        node._number_of_visits+=1
 
         return node, done, reward, steps+1
 
@@ -182,8 +221,6 @@ class MCTS_s3m():
                                                              
             state, reward, done, info = self.env.step(action)
 
-
-            
             mealy_node = self.mealy_machine.current_node
             if mealy_node != "-1":
                 mapped_action = self.map_actions[action]
