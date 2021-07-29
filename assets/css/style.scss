@@ -4,5 +4,9 @@
 @import "{{ site.theme }}";
 
 .wrapper {
-	max-width: 80%;
+	max-width: 70%;
+}
+
+section{
+	max-width:100%;
 }
