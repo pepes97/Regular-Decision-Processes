@@ -1,6 +1,4 @@
-# Regular Decision Processes
-
-## Introduction
+# Introduction
 
 Regular Decision Processes (RDPs) have
 been recently introduced as a non-Markovian extension of
