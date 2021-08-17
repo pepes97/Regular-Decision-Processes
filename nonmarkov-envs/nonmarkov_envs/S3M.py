@@ -18,9 +18,15 @@ class S3M():
         self.all_actions = list(self.env.specification.ACTIONS)
         self.best_loss = float("inf")
         self.next_cluster_idx = 0
-        
-        
-    def sample(self, mode=0):
+        self.n_a_s = {}
+        self.f_a_s = {}
+        self.p_a_s = {}
+        self.q_sa = {} # {s: {a: Q(s,a)}}
+        self.step_counter = 0
+        self.epsilon = 0.99
+        self.alpha = 0.8
+
+    def sample(self, smart_sampler):
         ''' Sample a new trace by exploring the environment
         mode = 0 for pure Exploration
                1 for Smart Sampling (not yet implemented)
@@ -28,55 +34,89 @@ class S3M():
         self.env.reset()
         current_trace = [self.initial_obs]
         state = self.initial_obs
-        n_a_s = {} # number of times an action a is applied to a state s
-        f_a_s = {} # 1 - n_a_s / (sum_a n_a_s)
-        p_a_s = {} # f_a_s / sum_a f_a_s | Probability of selecting an action a from s
+        n_a_s = self.n_a_s # number of times an action a is applied to a state s
+        f_a_s = self.f_a_s # 1 - n_a_s / (sum_a n_a_s)
+        p_a_s = self.p_a_s # f_a_s / sum_a f_a_s | Probability of selecting an action a from s
 
-        if mode == 0:
 
-            def pureExploration(state):   
-                
-                if n_a_s.get(state) == None:
-                    n_a_s[state] = [{}, 0]  # n = {s: [{a: num}, num]}
-                    f_a_s[state] = {}       # f = {s: {a: num}}
-                    p_a_s[state] = []       # p = {s: [distribution]}
-                    for action in self.all_actions:
-                        n_a_s[state][0][action] = 0
-                        f_a_s[state][action] = 0
-                        p_a_s[state] = np.random.uniform(0,1,len(self.all_actions))
-                
-                selected_action = random.choices(self.all_actions, p_a_s[state])[0]
-                n_a_s[state][0][selected_action] += 1
-                n_a_s[state][1] += 1
-                f_a_s[state][selected_action] = 1 - n_a_s[state][0][selected_action] / n_a_s[state][1]
+        def buildTrace(state):   
+            
+            if n_a_s.get(state) == None:
+                n_a_s[state] = [{}, 0]  # n = {s: [{a: num}, num]}
+                f_a_s[state] = {}       # f = {s: {a: num}}
+                self.p_a_s[state] = []       # p = {s: [distribution]}
+                for action in self.all_actions:
+                    n_a_s[state][0][action] = 0
+                    f_a_s[state][action] = 0
+                    self.p_a_s[state] = np.random.uniform(0,1,len(self.all_actions))
+            
+            # Select an action
+            selected_action = self.select_action(state, smart_sampler)
 
-                sumf_a_s = sum([f_a_s[state][action] for action in self.all_actions])
-                p_a_s[state] = [f_a_s[state][action]/sumf_a_s if sumf_a_s != 0 else 0 for action in self.all_actions]
-                
-                new_state, reward, done, _ = self.env.step(selected_action)
-                
-                current_trace.append(selected_action)
-                # if new_state == (1,):
-                #     print("ciao")
-                if self.traces.get(str(current_trace)) == None:
-                    self.traces[str(current_trace)] = [{new_state: 1}, 1]    # {ha: [{o: count_obs}, count_ha]}
+            n_a_s[state][0][selected_action] += 1
+            n_a_s[state][1] += 1
+            f_a_s[state][selected_action] = 1 - n_a_s[state][0][selected_action] / n_a_s[state][1]
+
+            sumf_a_s = sum([f_a_s[state][action] for action in self.all_actions])
+            self.p_a_s[state] = [f_a_s[state][action]/sumf_a_s if sumf_a_s != 0 else 0 for action in self.all_actions]
+            
+            new_state, reward, done, _ = self.env.step(selected_action)
+
+            self.step_counter += 1
+            
+            current_trace.append(selected_action)
+            current_trace.append(reward)
+            # if new_state == (1,):
+            #     print("ciao")
+            if self.traces.get(str(current_trace)) == None:
+                self.traces[str(current_trace)] = [{new_state: 1}, 1]    # {ha: [{o: count_obs}, count_ha]}
+            else:
+                if not new_state in self.traces[str(current_trace)][0]:
+                    self.traces[str(current_trace)][0][new_state] = 1                        
                 else:
-                    if not new_state in self.traces[str(current_trace)][0]:
-                        self.traces[str(current_trace)][0][new_state] = 1                        
-                    else:
-                        self.traces[str(current_trace)][0][new_state] += 1
-                    self.traces[str(current_trace)][1] += 1
+                    self.traces[str(current_trace)][0][new_state] += 1
+                self.traces[str(current_trace)][1] += 1
 
-                current_trace.append(new_state)  
-                
-                return new_state, reward, done
-            
-            done = False 
-            reward = 0
+            self.update_qfn(state, selected_action, reward, new_state)
 
-            while not done and reward==0:
-                state, reward, done = pureExploration(state)
+            current_trace.append(new_state)  
+         
             
+            return new_state, reward, done
+        
+        done = False 
+        reward = 0
+
+        while not done and reward==0:
+            state, reward, done = buildTrace(state)
+
+    def select_action(self, state, smart_sampler, epsilon_decay = 0.99, epsilon_min = 0.2):
+        if not smart_sampler:
+            selected_action = random.choices(self.all_actions, self.p_a_s[state])[0]
+        else:           
+            if random.random() > self.epsilon and state in self.q_sa:
+                selected_action = max(self.q_sa[state], key=self.q_sa[state].get)
+            else:
+                selected_action = random.choices(self.all_actions, self.p_a_s[state])[0]
+            self.epsilon = max(epsilon_min, self.epsilon*epsilon_decay)
+           
+        return selected_action
+
+    def update_qfn(self, s, a, r, sP, gamma=0.94,alpha_min=0.1,alpha_decay=0.9999):
+        if not s in self.q_sa:
+            self.q_sa[s] = {a: 0}
+        elif not a in self.q_sa[s]:
+            self.q_sa[s][a] = 0
+        if not sP in self.q_sa:
+            maxQ_sP = 0
+        else:
+            maxQ_sP = max(self.q_sa[sP].values())
+
+        self.q_sa[s][a] = self.q_sa[s][a] + self.alpha * ( r + gamma * maxQ_sP - self.q_sa[s][a])
+        self.alpha = max(alpha_min, self.alpha * alpha_decay)
+
+        return
+
 
     def base_distribution(self):
         '''
@@ -88,7 +128,7 @@ class S3M():
             # count delle volte totali in cui un'azione a è stata applicata ad h
             # P(o|h,a) = count1 / count2
             # Mettere P(o|h,a) in Tr
-        
+
         for c in self.cl:
             self.cl[c][1] = 0
 
@@ -258,7 +298,7 @@ class S3M():
         for ha in list(trP):
             lha = ast.literal_eval(ha)
             P_h_Tr[ha] = 1 # P(h | Tr )
-            for i in range(2, len(lha), 2):
+            for i in range(3, len(lha), 3):
                 curr_history = str(lha[:i])
                 next_obs = lha[i]
                 index_cp = trP[curr_history]
@@ -286,7 +326,7 @@ class S3M():
         # attributes = senza niente
 
         # Ogni riga sarà del formato seguente, per esempio:
-        # (0,0), 1, (1,0), 2, (1,1), 3
+        # (0,0), 1, 0, (1,0), 2, 0, (1,1), 3, 100, (1,2)
         # o1 = (0,0), a1 = 1, o2=(1,0), a2 = 2 ecc
         # 1 3 o1a1/0 o2a2/1 o3a3/2
         # dove 1 iniziale viene messo perché "la storia deve essere accettata"
@@ -294,6 +334,50 @@ class S3M():
         # poi, o1a1 corrispondono a osservazione+azione e 0 indica il cluster associato a quella 
         # sottostoria, quindi 0 è il cluster della sottostoria (0,0). Invece 1 è il cluster della 
         # sottostoria (0,0),1,(1,0),2 ecc.
+          
+        new_tr = {}
+        index_cl = 0
+        new_cl = {} # new_cl = {c: p}
+        convert_cl = {}
+
+        # CL: {c : [{o:P}, w]} 
+        # c1 -> c1, c2
+        # c1 : {o1: c1, o2: c2}
+        for cl in self.cl:
+            print("--")
+            print(self.cl)
+            print(cl)
+            print(len(self.cl[cl][0]))
+            for i in self.cl[cl][0]:
+                new_cl[index_cl] = self.cl[cl][0][i]
+                if not cl in convert_cl:
+                    convert_cl[cl] = {i: index_cl}
+                else:
+                    convert_cl[cl][i] = index_cl
+                index_cl += 1
+                print(new_cl)
+            
+        # print(convert_cl)
+        print(len(new_cl))
+        
+
+        # for ha in self.tr:
+        #     lha = ast.literal_eval(ha)
+        #     for i in range(3, len(lha), 3):
+        #         curr_history = str(lha[:i])
+        #         print(curr_history)
+        #         next_obs = lha[i]
+        #         print(next_obs)
+        #         index_cp = self.tr[curr_history]
+        #         cc = convert_cl[index_cp][next_obs]
+        #         new_lha = lha
+        #         new_lha.append(next_obs)
+                
+        #         print(new_lha)
+        #         pippostaabordovasca
+                
+
+
 
         
         sample_number = len(self.tr)
@@ -320,19 +404,27 @@ class S3M():
                     num_obs+=1
         alphabet_size = len([e for e in itertools.product(list_obs,list_actions)])
         
+        # print("maps_obs")
+        # print(self.maps_obs)
+        # print(self.maps_actions)
+
         if sample_number !=0:
             name = "prova.txt.dat"
             with open(name, "w") as f:
                 f.write(f"{sample_number} {alphabet_size} \n")
-                for ha in self.tr:
-                    lha = ast.literal_eval(ha)
-                    f.write(f"1 {len(lha)//2} ")
-                    for i in range(2,len(lha)+1,2):
-                        obs = lha[i-2]
-                        action = lha[i-1]
-                        index_cluster = self.tr[str(lha[:i])]
-                        f.write(f"{self.maps_obs[obs]}{self.maps_actions[action]}/{index_cluster} ")
-                    f.write("\n")
+                for ha in self.traces: # {ha: [{o: count_obs}, count_ha]}      
+                    for next_ob in self.traces[ha][0]: 
+                        lha = ast.literal_eval(ha)
+                        lha.append(next_ob)
+                        f.write(f"1 {(len(lha)-1)//3} ")
+                        for i in range(3,len(lha),3):
+                            obs = lha[i-3]
+                            action = lha[i-2]
+                            next_obs = lha[i]
+                            index_cluster = self.tr[str(lha[:i])]
+                            cc = convert_cl[index_cluster][next_obs]
+                            f.write(f"{self.maps_obs[obs]}{self.maps_actions[action]}/{cc} ")
+                        f.write("\n")
 
             f.close()
         else:
