@@ -16,3 +16,6 @@ $ pip install .
 $ cd ./nonmarkov-env/nonmarkov-env
 $ python __main__.py
 ```
+
+
+[https://pepes97.github.io/Regular-Decision-Processes/](https://pepes97.github.io/Regular-Decision-Processes/)
