@@ -132,13 +132,13 @@ if __name__ == "__main__":
     parser.add_argument("--only-mcts", type=str, default=False,
                         help="choose if you want to perform only mcts algorithm")
     
-    parser.add_argument("--episode", type=int, default=5, 
+    parser.add_argument("--episode", type=int, default=10, 
                         help="choose the length of the episode of the env")
     
-    parser.add_argument("--max-iterations", type=int, default=4500, 
+    parser.add_argument("--max-iterations", type=int, default=50, 
                         help="choose the max iterations of the s3m algorithm ")
     
-    parser.add_argument("--min-samples", type=int, default=100,
+    parser.add_argument("--min-samples", type=int, default=10,
                         help="min samples in the base distribution of s3m algorithm")
     
     args = parser.parse_args()
