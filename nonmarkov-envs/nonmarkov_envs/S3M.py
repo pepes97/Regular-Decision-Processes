@@ -34,38 +34,44 @@ class S3M():
         self.env.reset()
         current_trace = [self.initial_obs]
         state = self.initial_obs
-        n_a_s = self.n_a_s # number of times an action a is applied to a state s
-        f_a_s = self.f_a_s # 1 - n_a_s / (sum_a n_a_s)
-        p_a_s = self.p_a_s # f_a_s / sum_a f_a_s | Probability of selecting an action a from s
+        # n_a_s = self.n_a_s # number of times an action a is applied to a state s
+        # f_a_s = self.f_a_s # 1 - n_a_s / (sum_a n_a_s)
+        # p_a_s = self.p_a_s # f_a_s / sum_a f_a_s | Probability of selecting an action a from s
 
 
         def buildTrace(state):   
             
-            if n_a_s.get(state) == None:
-                n_a_s[state] = [{}, 0]  # n = {s: [{a: num}, num]}
-                f_a_s[state] = {}       # f = {s: {a: num}}
+            if self.n_a_s.get(state) == None:
+                self.n_a_s[state] = [{}, 0]  # n = {s: [{a: num}, num]}
+                self.f_a_s[state] = {}       # f = {s: {a: num}}
                 self.p_a_s[state] = []       # p = {s: [distribution]}
                 for action in self.all_actions:
-                    n_a_s[state][0][action] = 0
-                    f_a_s[state][action] = 0
-                    self.p_a_s[state] = np.random.uniform(0,1,len(self.all_actions))
+                    self.n_a_s[state][0][action] = 0
+                    self.f_a_s[state][action] = 0
+                    self.p_a_s[state] = [1/len(self.all_actions) for i in range(len(self.all_actions))]
+                    # self.p_a_s[state] = np.random.uniform(0,1,len(self.all_actions))
             
             # Select an action
             selected_action = self.select_action(state, smart_sampler)
 
-            n_a_s[state][0][selected_action] += 1
-            n_a_s[state][1] += 1
-            f_a_s[state][selected_action] = 1 - n_a_s[state][0][selected_action] / n_a_s[state][1]
+            self.n_a_s[state][0][selected_action] += 1
+            self.n_a_s[state][1] += 1
+            for a in self.all_actions:
+                self.f_a_s[state][a] = 1 - self.n_a_s[state][0][a] / self.n_a_s[state][1]
 
-            sumf_a_s = sum([f_a_s[state][action] for action in self.all_actions])
-            self.p_a_s[state] = [f_a_s[state][action]/sumf_a_s if sumf_a_s != 0 else 0 for action in self.all_actions]
-            
+            sumf_a_s = sum([self.f_a_s[state][action] for action in self.all_actions])
+
+            # print(f"\nn_a_s: {n_a_s}")
+            # print(f"f_a_s: {f_a_s}")
+            # print(f"Selection distr {self.p_a_s}")
+            self.p_a_s[state] = [self.f_a_s[state][action]/sumf_a_s for action in self.all_actions]
+            # print(f"Selection distr2 {self.p_a_s}\n")
             new_state, reward, done, _ = self.env.step(selected_action)
 
             self.step_counter += 1
             
             current_trace.append(selected_action)
-            current_trace.append(reward)
+            #  current_trace.append(reward)
             # if new_state == (1,):
             #     print("ciao")
             if self.traces.get(str(current_trace)) == None:
@@ -82,13 +88,22 @@ class S3M():
             current_trace.append(new_state)  
          
             
-            return new_state, reward, done
+            return new_state, reward, done, selected_action
         
         done = False 
         reward = 0
 
         while not done and reward==0:
-            state, reward, done = buildTrace(state)
+            # while input() != "0":
+                # if done or reward==100: 
+                #     break
+                state, reward, done, selected_action = buildTrace(state)
+                # print(f"Selected action {selected_action}")
+                # print(f"New state: {state}")
+                # print(f"Current trace: {current_trace}")
+                
+                
+                
 
     def select_action(self, state, smart_sampler, epsilon_decay = 0.99, epsilon_min = 0.2):
         if not smart_sampler:
@@ -129,6 +144,8 @@ class S3M():
             # P(o|h,a) = count1 / count2
             # Mettere P(o|h,a) in Tr
 
+        print(f"Traces: {self.traces}")
+
         for c in self.cl:
             self.cl[c][1] = 0
 
@@ -141,14 +158,26 @@ class S3M():
                 p = count_obs/count_tot
 
                 if not ha in self.tr:
+                    print(f"ha: {ha}")
                     self.tr[ha] = self.next_cluster_idx     # tr = {ha: cluster_idx}
                     self.cl[self.next_cluster_idx] = [{obs: p}, count_obs]      # cl = {cluster_idx: [{o: P(o|h,a)}, weight]}
+                    print(f"index_new_cl: {self.next_cluster_idx}")
+                    print(f"CL init: {self.cl[self.next_cluster_idx]}")
+                    print(f"Count obs: {count_obs}")
                     self.next_cluster_idx += 1
                     
                 else:
-                    c_index = self.tr[ha]
-                    self.cl[c_index][0][obs] = p
-                    self.cl[c_index][1] +=count_obs
+                    while True:
+                        print(f"ha: {ha}")
+                        c_index = self.tr[ha]
+                        print(f"c_index: {c_index}")
+                        print(f"Before: {self.cl[c_index]}")
+                        self.cl[c_index][0][obs] = p
+                        self.cl[c_index][1] +=count_obs
+                        print(f"After: {self.cl[c_index]}")
+                        if input() != "0":
+                            break
+                            
 
         return
 
@@ -168,7 +197,11 @@ class S3M():
         # Tr' {h: {a: {o: P(o|h,a)}}} 
 
         trP = copy.deepcopy(self.tr)
-        clP = copy.deepcopy(self.cl)       
+        clP = copy.deepcopy(self.cl) 
+
+        print("\n MERGER")
+        print(f"trP {trP}")
+        print(f"clP {clP}") 
 
         del_clusters = []
 
@@ -187,14 +220,24 @@ class S3M():
                     continue
                 
                 if sorted(all_obs1) == sorted(all_obs2):
-                    prob_seq1 = [clP[c1][0][obs] for obs in all_obs1]
-                    prob_seq2 = [clP[c2][0][obs] for obs in all_obs2]
-                    
-                    if clP[c1][1] >= clP[c2][1] and clP[c2][1]>=min_samples: # w1 >= w2 >= min_samples
-                        d_kl = self.kl_divergence(prob_seq1, prob_seq2)
+                    while True:
 
-                    elif clP[c1][1] < clP[c2][1] and clP[c1][1]>=min_samples: # w1 < w2 >= min_samples
-                        d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+                        prob_seq1 = [clP[c1][0][obs] for obs in all_obs1]
+                        prob_seq2 = [clP[c2][0][obs] for obs in all_obs2]
+                        # print(f"Prob1: {prob_seq1}")
+                        # print(f"Prob2: {prob_seq2}")
+                        
+                        
+                        if clP[c1][1] >= clP[c2][1] and clP[c2][1]>=min_samples: # w1 >= w2 >= min_samples
+                            d_kl = self.kl_divergence(prob_seq1, prob_seq2)
+
+                        elif clP[c1][1] < clP[c2][1] and clP[c1][1]>=min_samples: # w1 < w2 >= min_samples
+                            d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+
+                        # print(f"d_kl: {d_kl}")
+
+                        # if input() != "0":
+                        break
 
                     if d_kl < epsilon and d_kl < min_d_kl:
                         min_index = c2
@@ -205,8 +248,12 @@ class S3M():
                 w1 = clP[c1][1]
                 w2 = clP[min_index][1]                
                 w = w1+w2
+                print(f"clp1: {clP[c1]}")
+                print(f"clp2: {clP[min_index]}")
                 for obs in all_obs1: # {cluster_idx: [{o: P(o|h,a)}, weight]}
                     clP[c1][0][obs] = ( w1*clP[c1][0][obs] + w2*clP[min_index][0][obs])/w  # Eq.(2)
+                    print(f">>> MERGING EXECUTED! {min_index} -> {c1}")
+                print(clP[c1][0])
 
                 for ha in trP:
                     if min_index == trP[ha]:
@@ -215,6 +262,7 @@ class S3M():
                 del_clusters.append(min_index)
                 clP[c1][1] = w
 
+        print(f"Deleted clusters-1 {del_clusters}")
         for id_cluster in del_clusters:
             del clP[id_cluster]    
         
@@ -230,14 +278,21 @@ class S3M():
             min_index = -1
                     
             for c2 in clP:  # Possible bug: see Note (2)
-                if c2 == c1 or clP[c2][1] < min_samples or c2 in del_clusters:
+                # if c2 == c1 or clP[c2][1] < min_samples or c2 in del_clusters:
+                if c2 == c1 or c2 in del_clusters:
                     continue
                 all_obs2 = list(clP[c2][0])
                 if sorted(all_obs1) == sorted(all_obs2):
                     prob_seq1 = [clP[c1][0][obs] for obs in all_obs1]
                     prob_seq2 = [clP[c2][0][obs] for obs in all_obs2]
+
+                    if clP[c1][1] >= clP[c2][1]: # w1 >= w2 >= min_samples
+                        d_kl = self.kl_divergence(prob_seq1, prob_seq2)
+
+                    elif clP[c1][1] < clP[c2][1]: # w1 < w2 >= min_samples
+                        d_kl = self.kl_divergence(prob_seq2, prob_seq1)
                     
-                    d_kl = self.kl_divergence(prob_seq2, prob_seq1)
+                    # d_kl = self.kl_divergence(prob_seq2, prob_seq1)
                     #print(f"DIVERGENCE: {d_kl}")
                     if d_kl < min_d_kl:
                         min_index = c2
@@ -249,7 +304,9 @@ class S3M():
                 w = w1+w2
                 for obs in all_obs1: # {cluster_idx: [{o: P(o|h,a)}, weight]}
                     clP[min_index][0][obs] = ( w1*clP[c1][0][obs] + w2*clP[min_index][0][obs])/w  # Eq.(2)
-
+                    print(f">>> MERGING EXECUTED! {c1} -> {min_index}")
+                print(clP[min_index][0])
+                
                 for ha in trP:
                     if c1 == trP[ha]:
                         trP[ha] = min_index
@@ -257,8 +314,13 @@ class S3M():
                 del_clusters.append(c1)
                 clP[min_index][1] = w
 
+        print(f"Deleted clusters-2 {del_clusters}")
         for id_cluster in del_clusters:
             del clP[id_cluster]     
+
+        print(f"trP {trP}")
+        print(f"clP {clP}\n")
+        
         
         return trP, clP
 
@@ -298,7 +360,8 @@ class S3M():
         for ha in list(trP):
             lha = ast.literal_eval(ha)
             P_h_Tr[ha] = 1 # P(h | Tr )
-            for i in range(3, len(lha), 3):
+            # for i in range(3, len(lha), 3):
+            for i in range(2, len(lha), 2):
                 curr_history = str(lha[:i])
                 next_obs = lha[i]
                 index_cp = trP[curr_history]
@@ -340,14 +403,16 @@ class S3M():
         new_cl = {} # new_cl = {c: p}
         convert_cl = {}
 
+        
+
         # CL: {c : [{o:P}, w]} 
         # c1 -> c1, c2
         # c1 : {o1: c1, o2: c2}
         for cl in self.cl:
-            print("--")
-            print(self.cl)
-            print(cl)
-            print(len(self.cl[cl][0]))
+            # print("--")
+            # print(self.cl)
+            # print(cl)
+            # print(len(self.cl[cl][0]))
             for i in self.cl[cl][0]:
                 new_cl[index_cl] = self.cl[cl][0][i]
                 if not cl in convert_cl:
@@ -355,10 +420,10 @@ class S3M():
                 else:
                     convert_cl[cl][i] = index_cl
                 index_cl += 1
-                print(new_cl)
+                # print(new_cl)
             
         # print(convert_cl)
-        print(len(new_cl))
+        print(f"Nome: {len(new_cl)}")
         
 
         # for ha in self.tr:
@@ -416,10 +481,13 @@ class S3M():
                     for next_ob in self.traces[ha][0]: 
                         lha = ast.literal_eval(ha)
                         lha.append(next_ob)
-                        f.write(f"1 {(len(lha)-1)//3} ")
-                        for i in range(3,len(lha),3):
-                            obs = lha[i-3]
-                            action = lha[i-2]
+                        f.write(f"1 {(len(lha)-1)//2} ")
+                        # for i in range(3,len(lha),3):
+                        for i in range(2, len(lha), 2):
+                            # obs = lha[i-3]
+                            # action = lha[i-2]
+                            obs = lha[i-2]
+                            action = lha[i-1]
                             next_obs = lha[i]
                             index_cluster = self.tr[str(lha[:i])]
                             cc = convert_cl[index_cluster][next_obs]
