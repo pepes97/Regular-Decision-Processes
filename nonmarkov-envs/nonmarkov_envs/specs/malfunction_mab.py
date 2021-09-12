@@ -16,7 +16,7 @@ class MalfunctionMAB():
         malfunction_arm: int = 0,
         malfunction_count: int = 5,
         reward_win: int = 100, 
-        initial_state: tuple = (0),
+        initial_state: tuple = (0,),
     ):
         # Malfunction settings
         self.malfunction_arm = malfunction_arm
