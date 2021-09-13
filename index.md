@@ -53,7 +53,7 @@ At its core, MCTS consists of 4 steps:
 * **Backpropagation**:  finally, it evaluates the reached state to figure out if the agent won ornot.  It traverses upwards to the root and updates the win score of each node based on the (winning or loosing) final state reached by the agent
 
 <center>
-<img src="four_phases.jpeg" width="500em">
+<img src="four_phases.jpeg" width="600em">
 </center>
 
 # Setup Environment
@@ -64,7 +64,7 @@ We  implemented  our  code  in  Python  and  we  relied  on  the  FlexFringe2lib
 
 we compare two setups for each domain: i) only MCTS ii) S3M algoritm with pure exploration policy + MCTS, so to verify the effectiveness of the algorithm proposed by Abadi and Brafman.  The outcomes are depicted in following Figure.  We illustrate the average reward collected by the first two algorithms during learning.  Fifty trials were carried out using the currently learned Mealy Machine.  MAB trials were ten steps (episode) long, while Maze trials terminated after 15 steps if the agent did not meet the goal.  Except for the CheatMAB, Random Sampler performspretty well, although its cumulative reward is generally significantly lower.  A deeper examination of  the  Maze  domain  reveals  that  the  performance  difference  is  what  we  would  anticipate  if  we disregard  non-Markovian  behaviour—the  margin  is  less  than  in  the  MAB  domains.   In RL, proper exploration is crucial.  In RDPs,  exploring states is not enough;  we also need to collectstatistics on histories.  It is fascinating to compare the results of the two techniques in this aspect. In all of the graphs, we can see how the S3M method, based solely on pure exploration, contributes more than the only MCTS approach.  In particular, we can see how the difference between thetwo algorithms in the MAB domains is more pronounced, but the results in the MAZE are pretty similar, but this is due to the complexity of the domain itself.  In the next section, we will look atwhy S3M can provide benefits and what we consider to be the most significant factors that allow S3M to outperform the single MCTS.
 <center>
-<img src = "results.png" width="500em">
+<img src = "results.png" width="600em">
 </center>
 
 # Analysis
