@@ -37,8 +37,7 @@ where
 
 ## Slides
 
-[Slides](https://github.com/pepes97/Regular-Decision-Processes/blob/main/slides/RDP_presentation.pdf)
-
 <center>
-<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vQ9cK2ABjeM17yF9tYKtDtj0tjliVS2fFp3V6XKZAN9G9jS3etlh_Uqaskk6GBUxQ/embed?start=false&loop=false&delayms=60000" frameborder="0" width="880" height="649" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+<a href src="https://docs.google.com/presentation/d/e/2PACX-1vQ9cK2ABjeM17yF9tYKtDtj0tjliVS2fFp3V6XKZAN9G9jS3etlh_Uqaskk6GBUxQ/embed?start=false&loop=false&delayms=60000" target="_blank"
+<img src= "https://github.com/pepes97/Regular-Decision-Processes/tree/main/slides/start.png"/></a>
 <center>
