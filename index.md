@@ -39,9 +39,9 @@ The Abadi and Branfam algorithm, called *Sample Merge Mealy Model* (S3M), follow
 * **Merger**: it merges the distributions of multiple histories based on the Kullback-Leibler divergence.
 * **Loss function**: it allows to select the best model, penalizing the ones with the few merges and too high support.
 * **Mealy Machine**: it generates the Mealy Machine from the computed model 
-
-<img src="./S3M.png">
-
+<center>
+<img src="./S3M.png" width="400em">
+</center>
 # Monte Carlo Tree Search
 
 *Monte  Carlo  Tree  Search*  (MCTS)  uses  Monte  Carlo  simulation  to  accumulate  value  estimates to guide towards highly rewarding paths in the search tree.  In other words,  MCTS pays more attention  to  nodes  that  are  more  promising,  so  it  avoids  having  to  brute  force  all  possibilities which is impractical to do.
@@ -52,7 +52,9 @@ At its core, MCTS consists of 4 steps:
 * **Simulation**:  after Expansion, the algorithm simulates an entire episode from the selected node by picking a sequence of random actions until the episode ends
 * **Backpropagation**:  finally, it evaluates the reached state to figure out if the agent won ornot.  It traverses upwards to the root and updates the win score of each node based on the (winning or loosing) final state reached by the agent
 
-<img src="four_phases.jpeg">
+<center>
+<img src="four_phases.jpeg" width="200em">
+</center>
 
 # Setup Environment
 
@@ -61,8 +63,9 @@ We  implemented  our  code  in  Python  and  we  relied  on  the  FlexFringe2lib
 # Results
 
 we compare two setups for each domain: i) only MCTS ii) S3M algoritm with pure exploration policy + MCTS, so to verify the effectiveness of the algorithm proposed by Abadi and Brafman.  The outcomes are depicted in following Figure.  We illustrate the average reward collected by the first two algorithms during learning.  Fifty trials were carried out using the currently learned Mealy Machine.  MAB trials were ten steps (episode) long, while Maze trials terminated after 15 steps if the agent did not meet the goal.  Except for the CheatMAB, Random Sampler performspretty well, although its cumulative reward is generally significantly lower.  A deeper examination of  the  Maze  domain  reveals  that  the  performance  difference  is  what  we  would  anticipate  if  we disregard  non-Markovian  behaviour—the  margin  is  less  than  in  the  MAB  domains.   In RL, proper exploration is crucial.  In RDPs,  exploring states is not enough;  we also need to collectstatistics on histories.  It is fascinating to compare the results of the two techniques in this aspect. In all of the graphs, we can see how the S3M method, based solely on pure exploration, contributes more than the only MCTS approach.  In particular, we can see how the difference between thetwo algorithms in the MAB domains is more pronounced, but the results in the MAZE are pretty similar, but this is due to the complexity of the domain itself.  In the next section, we will look atwhy S3M can provide benefits and what we consider to be the most significant factors that allow S3M to outperform the single MCTS.
-
-<img src = "results.png">
+<center>
+<img src = "results.png" width="200em">
+</center>
 
 # Analysis
 
@@ -73,7 +76,7 @@ Our S3M performance analysis mainly focused on the RotatingMAB domain, which is 
 We created a domain similar to Rotating Maze but proved exceedingly challenging for both theS3M  and  PAC-RL  algorithms.   It  is  made  out  of  a  grid  domain  that  contains  the  agent,  his “opponent”, and the goal that the agent must achieve.  The Figure below shows our domain in the initial situation. The antagonist moves at each agent's action toward one of the four surrounding cells according to a distribution.
 The rotation of the grid depends on the moves of both the agent and its antagonist. More precisely, the grid rotates every n chosen actions, with n >=5 , just as it does in the Rotating Maze. If the agent goes in the same cell of its opponent the algorithm will start over and the agent will be forced to try again to reach the goal.
 <center>
-<img src="domain.png" height="300em">
+<img src="domain.png" height="400em">
 </center>
 
 # Credits
