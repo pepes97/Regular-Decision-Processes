@@ -37,7 +37,8 @@ where
 
 ## Slides
 
-<center>
-<a href src="https://docs.google.com/presentation/d/e/2PACX-1vQ9cK2ABjeM17yF9tYKtDtj0tjliVS2fFp3V6XKZAN9G9jS3etlh_Uqaskk6GBUxQ/embed?start=false&loop=false&delayms=60000" target="_blank"
-<img src= "https://github.com/pepes97/Regular-Decision-Processes/tree/main/slides/start.png"/></a>
+
+<a href src="https://docs.google.com/presentation/d/e/2PACX-1vQ9cK2ABjeM17yF9tYKtDtj0tjliVS2fFp3V6XKZAN9G9jS3etlh_Uqaskk6GBUxQ/embed?start=false&loop=false&delayms=60000" target="_blank">
+<img src= "./slides/start.png"/>
+</a>
 <center>
