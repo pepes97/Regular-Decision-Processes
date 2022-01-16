@@ -1,6 +1,22 @@
 # Regular-Decision-Processes
 
-## Install
+## Table of contents
+
+* [Development Setup](#Development-Setup)
+* [Requirements](#Requirements)
+  * [Download the glove data](#Download-the-glove-data)
+  * [Run](#Run)
+* [Github Pages](#Github-Pages)
+* [Report](#Report)
+* [Slides](#Slides)
+
+### Development Setup
+
+<p align="center">
+  <img width="750" height="350" src="https://user-images.githubusercontent.com/56698309/149672967-9c1fbb5e-813e-4f58-a989-3908a09dd3f5.png">
+</p>
+
+### Requirements
 
 ```
 $ conda create --name rdp python=3.8.10
@@ -10,7 +26,7 @@ $ cd ./nonmarkov-envs
 $ pip install .
 ```
 
-## Run
+### Run
 
 ``` 
 $ cd ./nonmarkov-env/nonmarkov-env
@@ -26,16 +42,19 @@ where
 - `MIXED` choose if you want to perform mixed S3M algorithm and MCTS saving figure, default is False
 
 
-## Link Github Pages
+### Github Pages
 
-[Github Pages](https://pepes97.github.io/Regular-Decision-Processes/)
+<a href="https://pepes97.github.io/Regular-Decision-Processes/" target="_blank">
+  <img src="https://img.icons8.com/fluency/50/000000/github.png"/>
+</a>
 
+### Report
 
-## Report
+<a href="https://github.com/pepes97/Regular-Decision-Processes/blob/main/report/RDP.pdf" target="_blank">
+   <img src="https://img.icons8.com/color/50/000000/pdf.png" />
+</a>
 
-[Report](https://github.com/pepes97/Regular-Decision-Processes/blob/main/report/RDP.pdf)
-
-## Slides
+### Slides
 
 <a href="https://docs.google.com/presentation/d/e/2PACX-1vQ9cK2ABjeM17yF9tYKtDtj0tjliVS2fFp3V6XKZAN9G9jS3etlh_Uqaskk6GBUxQ/embed?start=false&loop=false&delayms=60000#slide=id.p1" target="_blank">
 <img src= "./slides/start.png"/>
